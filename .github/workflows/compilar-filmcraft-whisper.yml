@@ -1,86 +1,55 @@
-name: Construir FilmCraft con IA local (Windows)
-
-# La compilación se hace en GitHub; no instala Rust en la PC del editor.
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/compilar-filmcraft-whisper.yml"
-
-permissions:
-  contents: read
-
-jobs:
-  filmcraft-windows:
-    name: FilmCraft nativo + Whisper (Windows x64)
-    runs-on: windows-latest
-    timeout-minutes: 180
-    env:
-      CARGO_TERM_COLOR: always
-      CARGO_INCREMENTAL: "0"
-    steps:
-      - name: Obtener instrucciones del kit
-        uses: actions/checkout@v4
-
-      - name: Obtener el código oficial de FilmCraft
-        uses: actions/checkout@v4
-        with:
-          repository: storytold/filmcraft
-          ref: main
-          path: filmcraft-source
-          persist-credentials: false
-
-      - name: Instalar Rust SOLAMENTE en el servidor de compilación
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.95.0"
-
-      - name: Comprobar las dependencias de compilación
-        shell: pwsh
-        run: |
-          rustc --version
-          cargo --version
-          if (-not (Test-Path "filmcraft-source/apps/filmcraft/Cargo.toml")) {
-            throw "No está el código de FilmCraft; verifica el repositorio oficial"
-          }
-          Select-String -Path "filmcraft-source/apps/filmcraft/Cargo.toml" -Pattern '^whisper\s*=' | Out-String | Write-Host
-
-      - name: Compilar UNA aplicación con Whisper integrado
-        shell: pwsh
-        working-directory: filmcraft-source
-        run: |
-          cargo build --release --locked -p filmcraft --features whisper
-          if ($LASTEXITCODE -ne 0) {
-            throw "Falló la compilación de FilmCraft con Whisper. Revisa el primer error de Cargo arriba."
-          }
-
-      - name: Crear paquete Windows con licencias y comprobación SHA256
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $exe = "filmcraft-source/target/release/filmcraft.exe"
-          if (-not (Test-Path -LiteralPath $exe)) {
-            throw "La compilación terminó sin producir filmcraft.exe"
-          }
           $destination = "output/FilmCraft_Whisper_Local"
           New-Item -ItemType Directory -Path $destination -Force | Out-Null
-          Copy-Item -LiteralPath $exe -Destination "$destination/filmcraft.exe"
+          Copy-Item -LiteralPath $exe -Destination "$destination/filmcraft.exe" -Force
           foreach ($file in @("LICENSE-MIT", "LICENSE-APACHE", "NOTICE", "ATTRIBUTION.md")) {
             $original = "filmcraft-source/$file"
             if (Test-Path -LiteralPath $original) {
-              Copy-Item -LiteralPath $original -Destination "$destination/$file"
+              Copy-Item -LiteralPath $original -Destination "$destination/$file" -Force
             }
           }
-          Copy-Item -LiteralPath "LEEME-AL-ABRIR.txt" -Destination "$destination/LEEME-AL-ABRIR.txt"
-          Copy-Item -LiteralPath "ABRIR_EDITOR_UNICO.bat" -Destination "$destination/ABRIR_EDITOR_UNICO.bat"
+          # La guia se crea aqui: no depende de archivos adicionales del repositorio Prueba.
+          $guide = @'
+          ESTUDIO JOVEN - PRIMERA PRUEBA NATIVA
+
+          Este paquete contiene FilmCraft compilado con la caracteristica Whisper.
+          Es una version experimental sin cambios de marca ni animaciones estilo CapCut.
+
+          1. Extrae todos los archivos del ZIP en una carpeta de Windows.
+          2. Abre ABRIR_EDITOR_UNICO.bat o filmcraft.exe.
+          3. Importa tu video y busca el panel de transcripcion/subtitulos.
+          4. El modelo de IA puede necesitar descargarse la primera vez.
+          5. Edita los subtitulos y prueba la exportacion del video.
+
+          La funcion integrada utiliza Candle; NO reutiliza automaticamente
+          el archivo ggml-small.bin del prototipo anterior con whisper.cpp.
+          Si algo falla, conserva el mensaje de error o haz una captura.
+
+          Codigo fuente oficial: https://github.com/storytold/filmcraft
+          '@
+          $guide | Set-Content -LiteralPath "$destination/LEEME-AL-ABRIR.txt" -Encoding utf8
+          $launcher = @'
+          @echo off
+          setlocal
+          cd /d "%~dp0"
+          if not exist "filmcraft.exe" (
+            echo ERROR: No se encontro filmcraft.exe en esta carpeta.
+            pause
+            exit /b 1
+          )
+          start "" "%~dp0filmcraft.exe"
+          '@
+          $launcher | Set-Content -LiteralPath "$destination/ABRIR_EDITOR_UNICO.bat" -Encoding ascii
+          $commit = git -C filmcraft-source rev-parse HEAD
+          "Codigo oficial storytold/filmcraft commit: $commit" | Set-Content -LiteralPath "$destination/ORIGEN.txt" -Encoding utf8
           $checksum = (Get-FileHash -LiteralPath "$destination/filmcraft.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$checksum  filmcraft.exe" | Set-Content -Encoding ascii -Path "$destination/SHA256.txt"
+          "$checksum  filmcraft.exe" | Set-Content -LiteralPath "$destination/SHA256.txt" -Encoding ascii
           Write-Host "EXE generado correctamente:"
           Get-Item "$destination/filmcraft.exe" | Select-Object FullName,Length
           Compress-Archive -Path "$destination/*" -DestinationPath "output/FilmCraft_IA_Integrada_Windows.zip" -CompressionLevel Optimal -Force
           if (-not (Test-Path -LiteralPath "output/FilmCraft_IA_Integrada_Windows.zip")) {
-            throw "No se generó el ZIP de entrega"
+            throw "No se genero el ZIP de entrega"
           }
+          Write-Host "ZIP listo para publicar."
 
       - name: Publicar ZIP para descargar desde Actions
         uses: actions/upload-artifact@v4
