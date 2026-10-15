@@ -1,61 +1,55 @@
+name: Construir FilmCraft con Whisper para Windows
 
-          foreach ($nombre in @('LICENSE-MIT', 'LICENSE-APACHE', 'LICENSE', 'NOTICE', 'ATTRIBUTION.md')) {
-            $origen = "filmcraft-source/$nombre"
-            if (Test-Path -LiteralPath $origen) {
-              Copy-Item -LiteralPath $origen -Destination "$destino/$nombre" -Force
-            }
-          }
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/compilar-filmcraft-whisper.yml
 
-          # Listas de lineas, sin here-strings que puedan invalidar el YAML.
-          $instrucciones = @(
-            'FILMCRAFT CON IA LOCAL - PRUEBA PARA ESTUDIO JOVEN'
-            ''
-            'Esta es una compilacion experimental del editor FilmCraft original.'
-            'Whisper esta habilitado desde la compilacion de Rust.'
-            ''
-            '1. Extrae todos los archivos del ZIP.'
-            '2. Abre ABRIR_EDITOR_UNICO.bat o filmcraft.exe.'
-            '3. Carga un video y busca las herramientas de transcripcion.'
-            '4. Descarga el modelo que pida FilmCraft, si corresponde.'
-            '5. Prueba la creacion, edicion y exportacion de subtitulos.'
-            ''
-            'IMPORTANTE: la IA de esta compilacion usa Candle, no whisper.cpp.'
-            'El archivo ggml-small.bin anterior NO se reutiliza automaticamente.'
-            'Esta version conserva la interfaz y marca original de FilmCraft.'
-            ''
-            'Fuente: https://github.com/storytold/filmcraft'
-          )
-          $instrucciones | Set-Content -LiteralPath "$destino/LEEME-AL-ABRIR.txt" -Encoding utf8
+permissions:
+  contents: read
 
-          $iniciador = @(
-            '@echo off'
-            'setlocal'
-            'cd /d "%~dp0"'
-            'if not exist "filmcraft.exe" ('
-            '  echo No se encontro filmcraft.exe en esta carpeta.'
-            '  pause'
-            '  exit /b 1'
-            ')'
-            'start "" "%~dp0filmcraft.exe"'
-          )
-          $iniciador | Set-Content -LiteralPath "$destino/ABRIR_EDITOR_UNICO.bat" -Encoding ascii
+jobs:
+  compilar:
+    name: FilmCraft con IA local - Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 180
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - name: Obtener codigo oficial de FilmCraft
+        uses: actions/checkout@v4
+        with:
+          repository: storytold/filmcraft
+          ref: main
+          path: filmcraft-source
+          persist-credentials: false
 
-          $commit = (git -C filmcraft-source rev-parse HEAD).Trim()
-          "FilmCraft original: storytold/filmcraft`nCommit: $commit" | Set-Content -LiteralPath "$destino/ORIGEN.txt" -Encoding utf8
-          $sha = (Get-FileHash -LiteralPath "$destino/filmcraft.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$sha  filmcraft.exe" | Set-Content -LiteralPath "$destino/SHA256.txt" -Encoding ascii
+      - name: Preparar Rust en GitHub
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.95.0'
 
-          $archivo = 'output/FilmCraft_IA_Integrada_Windows.zip'
-          Compress-Archive -Path "$destino/*" -DestinationPath $archivo -CompressionLevel Optimal -Force
-          if (-not (Test-Path -LiteralPath $archivo)) {
-            throw 'No se genero el ZIP final.'
-          }
-          Get-Item -LiteralPath $archivo | Select-Object FullName, Length
+      - name: Compilar el editor con Whisper
+        shell: pwsh
+        working-directory: filmcraft-source
+        run: cargo build --release --locked -p filmcraft --features whisper
 
-      - name: Publicar archivo para descargar
+      - name: Preparar ejecutable y licencias
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path entrega -Force | Out-Null
+          Copy-Item -LiteralPath 'filmcraft-source/target/release/filmcraft.exe' -Destination 'entrega/filmcraft.exe'
+          Copy-Item -LiteralPath 'filmcraft-source/LICENSE-MIT' -Destination 'entrega/LICENSE-MIT'
+          Copy-Item -LiteralPath 'filmcraft-source/LICENSE-APACHE' -Destination 'entrega/LICENSE-APACHE'
+          Copy-Item -LiteralPath 'filmcraft-source/NOTICE' -Destination 'entrega/NOTICE'
+          Copy-Item -LiteralPath 'filmcraft-source/ATTRIBUTION.md' -Destination 'entrega/ATTRIBUTION.md'
+
+      - name: Publicar editor descargable
         uses: actions/upload-artifact@v4
         with:
-          name: FilmCraft-Whisper-Integrado-Windows
-          path: output/FilmCraft_IA_Integrada_Windows.zip
+          name: FilmCraft-Whisper-Windows
+          path: entrega/
           if-no-files-found: error
           retention-days: 14
