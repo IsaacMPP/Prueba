@@ -1,0 +1,203 @@
+--- a/crates/edit/src/transcript.rs
++++ b/crates/edit/src/transcript.rs
+@@ -286,6 +286,10 @@
+     pub gap_frames: i64,
+     /// A pause at least this long starts a new caption.
+     pub break_pause: Tick,
++    /// Cut after a sentence ends, even if the block is not yet half full.
++    pub strict_sentences: bool,
++    /// Start a new block when the next word begins a Spanish question/exclamation.
++    pub spanish_questions: bool,
+ }
+ 
+ impl Default for CaptionRules {
+@@ -297,6 +301,8 @@
+             max_duration: Tick(7 * TICKS_PER_SECOND),
+             gap_frames: 0,
+             break_pause: Tick(TICKS_PER_SECOND),
++            strict_sentences: false, // Preserve existing engine defaults; Studio Joven UI opts in.
++            spanish_questions: false,
+         }
+     }
+ }
+@@ -334,9 +340,13 @@
+             let fits_line = cur + 1 + len <= max_chars;
+             let fits = fits_line || lines.len() < max_lines;
+             let used: usize = lines.iter().sum::<usize>() + lines.len() - 1;
+-            let sentence_end = prev.text.ends_with(['.', '?', '!']) && used * 2 >= cap_chars;
+-            let brk =
+-                !fits || w.speaker != prev.speaker || w.start - prev.end >= rules.break_pause || w.end - words[a].start > rules.max_duration || sentence_end;
++            let sentence_end = prev.text.ends_with(['.', '?', '!'])
++                && (rules.strict_sentences || used * 2 >= cap_chars);
++            let new_question = rules.spanish_questions && w.text.starts_with(['¿', '¡']);
++            let brk = !fits || w.speaker != prev.speaker
++                || w.start - prev.end >= rules.break_pause
++                || w.end - words[a].start > rules.max_duration
++                || sentence_end || new_question;
+             if brk {
+                 groups.push(a..i);
+                 a = i;
+--- a/crates/edit/src/transcript/tests.rs
++++ b/crates/edit/src/transcript/tests.rs
+@@ -296,3 +296,39 @@
+     let b = caption_blocks(&words, &rules, R);
+     check_blocks(&b, &rules);
+ }
++
++#[test]
++fn estudio_joven_separates_answer_from_new_spanish_question() {
++    // Two voices may incorrectly share the same diarization label: punctuation is an extra cue.
++    let tokens = ["iglesia", "y", "para", "Dios.", "¿Cuál", "ha", "sido", "el", "momento?"];
++    let words: Vec<SeqWord> = tokens.iter().enumerate().map(|(i, txt)| SeqWord {
++        text: (*txt).into(), start: s(i as f64 * 0.3), end: s((i+1) as f64 * 0.3),
++        clip: ClipId(1), item: MEDIA, index: i, track: 0,
++        speaker: Some("Speaker 1".into()), confidence: 1.0,
++    }).collect();
++    let opts = CaptionRules {
++        max_chars: 42, lines: 2,
++        strict_sentences: true, spanish_questions: true,
++        ..Default::default()
++    };
++    let output = caption_blocks(&words, &opts, R);
++    assert_eq!(output.len(), 2, "interviewer question must not join the previous answer");
++    assert_eq!(output[0].text, "iglesia y para Dios.");
++    assert_eq!(output[1].text, "¿Cuál ha sido el momento?");
++    assert_eq!(output[0].words, 0..4);
++    assert_eq!(output[1].words, 4..9);
++}
++
++#[test]
++fn estudio_joven_breaks_at_inverted_question_without_previous_period() {
++    let tokens = ["por", "Dios", "¿Cuál", "fue", "tu", "experiencia?"];
++    let words: Vec<SeqWord> = tokens.iter().enumerate().map(|(i, txt)| SeqWord {
++        text: (*txt).into(), start: s(i as f64 * 0.24), end: s((i+1) as f64 * 0.24),
++        clip: ClipId(1), item: MEDIA, index: i, track: 0, speaker: None, confidence: 1.0,
++    }).collect();
++    let opts = CaptionRules { strict_sentences: true, spanish_questions: true, ..Default::default() };
++    let output = caption_blocks(&words, &opts, R);
++    assert_eq!(output.len(), 2);
++    assert_eq!(output[0].text, "por Dios");
++    assert_eq!(output[1].text, "¿Cuál fue tu experiencia?");
++}
+--- a/crates/engine/src/transcript.rs
++++ b/crates/engine/src/transcript.rs
+@@ -384,7 +384,12 @@
+         min_duration: f64_p(p, "minSeconds").map(Tick::from_seconds_f64).unwrap_or(d.min_duration),
+         max_duration: f64_p(p, "maxSeconds").map(Tick::from_seconds_f64).unwrap_or(d.max_duration),
+         gap_frames: p.get("gapFrames").and_then(Value::as_i64).unwrap_or(d.gap_frames),
+-        break_pause: d.break_pause,
++        break_pause: f64_p(p, "pauseSeconds")
++            .filter(|n| n.is_finite() && *n >= 0.0)
++            .map(Tick::from_seconds_f64)
++            .unwrap_or(d.break_pause),
++        strict_sentences: bool_p(p, "strictSentences").unwrap_or(d.strict_sentences),
++        spanish_questions: bool_p(p, "spanishQuestions").unwrap_or(d.spanish_questions),
+     };
+     let blocks = tx::caption_blocks(&words, &rules, s.sequence_rate());
+     let format = str_p(p, "format").and_then(CaptionFormat::from_name).unwrap_or_default();
+@@ -484,7 +489,7 @@
+             "transcript.createCaptions",
+             "Create Captions from Transcript…",
+             &["Sequence", "Transcript"],
+-            r#"{"maxChars":n?,"lines":1|2?,"minSeconds":f?,"maxSeconds":f?,"gapFrames":n?,"format":str?,"name":str?}"#,
++            r#"{"maxChars":n?,"lines":1|2|3?,"minSeconds":f?,"maxSeconds":f?,"gapFrames":n?,"pauseSeconds":f?,"strictSentences":bool?,"spanishQuestions":bool?,"format":str?,"name":str?}"#,
+             has_transcript,
+             create_captions,
+             true,
+--- a/crates/ui-egui/src/panels/text.rs
++++ b/crates/ui-egui/src/panels/text.rs
+@@ -298,6 +298,71 @@
+     resp.on_hover_cursor(egui::CursorIcon::Text)
+ }
+ 
++// Studio Joven: this is a NATIVE FilmCraft panel, not a separate BAT or Electron app.
++// Options live in egui's per-session memory and apply to the caption track generated below.
++fn estudio_joven_params(ctx: &egui::Context) -> Value {
++    let g = |name: &str| egui::Id::new(("estudio-joven-captions", name));
++    let chars = ctx.data(|d| d.get_temp::<u32>(g("chars"))).unwrap_or(32);
++    let lines = ctx.data(|d| d.get_temp::<u32>(g("lines"))).unwrap_or(2);
++    let min_seconds = ctx.data(|d| d.get_temp::<f64>(g("min"))).unwrap_or(0.6);
++    let max_seconds = ctx.data(|d| d.get_temp::<f64>(g("max"))).unwrap_or(3.0);
++    let pause = ctx.data(|d| d.get_temp::<f64>(g("pause"))).unwrap_or(0.4);
++    let sentences = ctx.data(|d| d.get_temp::<bool>(g("sentences"))).unwrap_or(true);
++    let questions = ctx.data(|d| d.get_temp::<bool>(g("questions"))).unwrap_or(true);
++    json!({
++        "maxChars": chars, "lines": lines, "minSeconds": min_seconds,
++        "maxSeconds": max_seconds.max(min_seconds), "pauseSeconds": pause,
++        "strictSentences": sentences, "spanishQuestions": questions,
++        "name": "Estudio Joven - Subtitulos"
++    })
++}
++
++fn estudio_joven_panel(ui: &mut egui::Ui, app: &mut FilmcraftApp, rect: Rect, actions: &mut Vec<(String, Value)>) {
++    let t = app.tokens;
++    ui.painter().rect_filled(rect, 5.0, t.field_bg);
++    let g = |name: &str| egui::Id::new(("estudio-joven-captions", name));
++    let mut chars = ui.ctx().data(|d| d.get_temp::<u32>(g("chars"))).unwrap_or(32);
++    let mut lines = ui.ctx().data(|d| d.get_temp::<u32>(g("lines"))).unwrap_or(2);
++    let mut min_s = ui.ctx().data(|d| d.get_temp::<f64>(g("min"))).unwrap_or(0.6);
++    let mut max_s = ui.ctx().data(|d| d.get_temp::<f64>(g("max"))).unwrap_or(3.0);
++    let mut pause = ui.ctx().data(|d| d.get_temp::<f64>(g("pause"))).unwrap_or(0.4);
++    let mut sentences = ui.ctx().data(|d| d.get_temp::<bool>(g("sentences"))).unwrap_or(true);
++    let mut questions = ui.ctx().data(|d| d.get_temp::<bool>(g("questions"))).unwrap_or(true);
++    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink(7.0)).id_salt("estudio-joven-native-settings"));
++    child.label(egui::RichText::new("ESTUDIO JOVEN  |  Crear subtitulos").strong().size(12.0).color(t.text));
++    child.horizontal_wrapped(|ui| {
++        ui.label("Caracteres/linea");
++        ui.add(egui::DragValue::new(&mut chars).range(12..=70));
++        ui.label("Lineas");
++        ui.add(egui::DragValue::new(&mut lines).range(1..=3));
++    });
++    child.horizontal_wrapped(|ui| {
++        ui.label("Min s");
++        ui.add(egui::DragValue::new(&mut min_s).range(0.2..=6.0).speed(0.05));
++        ui.label("Max s");
++        ui.add(egui::DragValue::new(&mut max_s).range(0.5..=9.0).speed(0.1));
++        ui.label("Pausa s");
++        ui.add(egui::DragValue::new(&mut pause).range(0.0..=2.0).speed(0.05));
++    });
++    child.horizontal_wrapped(|ui| {
++        ui.checkbox(&mut sentences, "Separar al terminar oracion");
++        ui.checkbox(&mut questions, "Separar preguntas (¿/¡)");
++    });
++    ui.ctx().data_mut(|d| {
++        d.insert_temp(g("chars"), chars);
++        d.insert_temp(g("lines"), lines);
++        d.insert_temp(g("min"), min_s);
++        d.insert_temp(g("max"), max_s);
++        d.insert_temp(g("pause"), pause);
++        d.insert_temp(g("sentences"), sentences);
++        d.insert_temp(g("questions"), questions);
++    });
++    if child.button("Crear pista con estas opciones").clicked() {
++        actions.push(("transcript.createCaptions".into(), estudio_joven_params(ui.ctx())));
++        app.ui.text_tab = "Captions".into();
++    }
++}
++
+ fn transcript(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
+     let t = app.tokens;
+     if app.session.active_sequence().is_none() {
+@@ -344,7 +409,7 @@
+         (Icon::Razor, "text.transcript.extract", tl!("Extract selected text"), sel.is_some(), "transcript.extract", range.clone().unwrap_or_default()),
+         (Icon::Trash, "text.transcript.lift", tl!("Lift selected text"), sel.is_some(), "transcript.lift", range.unwrap_or_default()),
+         (Icon::Link, "text.transcript.removeFillers", tl!("Remove filler words"), true, "transcript.removeFillers", json!({})),
+-        (Icon::Captions, "text.transcript.createCaptions", tl!("Create captions"), true, "transcript.createCaptions", json!({})),
++        (Icon::Captions, "text.transcript.createCaptions", tl!("Create captions"), true, "transcript.createCaptions", estudio_joven_params(ui.ctx())),
+     ];
+     for (icon, id, label, enabled, cmd, params) in tools {
+         let r = Rect::from_min_size(pos2(x, bar.min.y), vec2(24.0, 24.0));
+@@ -360,8 +425,12 @@
+         x += 28.0;
+     }
+ 
++    // Studio Joven integrated creation options; the captions are generated directly in FilmCraft.
++    let settings_rect = Rect::from_min_max(pos2(rect.min.x + 8.0, bar.max.y + 5.0), pos2(rect.max.x - 8.0, bar.max.y + 183.0));
++    estudio_joven_panel(ui, app, settings_rect, &mut actions);
++
+     // ---- paragraphs of words
+-    let list = Rect::from_min_max(pos2(rect.min.x + 6.0, bar.max.y + 8.0), pos2(rect.max.x - 6.0, rect.max.y - 4.0));
++    let list = Rect::from_min_max(pos2(rect.min.x + 6.0, settings_rect.max.y + 8.0), pos2(rect.max.x - 6.0, rect.max.y - 4.0));
+     ui.painter().rect_filled(list, 3.0, t.app_bg);
+     let ph = app.session.playhead();
+     let current = filmcraft_edit::transcript::word_at(words, ph);
