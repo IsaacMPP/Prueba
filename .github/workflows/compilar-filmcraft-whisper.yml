@@ -1,57 +1,58 @@
-          $destination = "output/FilmCraft_Whisper_Local"
-          New-Item -ItemType Directory -Path $destination -Force | Out-Null
-          Copy-Item -LiteralPath $exe -Destination "$destination/filmcraft.exe" -Force
-          foreach ($file in @("LICENSE-MIT", "LICENSE-APACHE", "NOTICE", "ATTRIBUTION.md")) {
-            $original = "filmcraft-source/$file"
-            if (Test-Path -LiteralPath $original) {
-              Copy-Item -LiteralPath $original -Destination "$destination/$file" -Force
+
+          foreach ($nombre in @('LICENSE-MIT', 'LICENSE-APACHE', 'LICENSE', 'NOTICE', 'ATTRIBUTION.md')) {
+            $origen = "filmcraft-source/$nombre"
+            if (Test-Path -LiteralPath $origen) {
+              Copy-Item -LiteralPath $origen -Destination "$destino/$nombre" -Force
             }
           }
-          # La guia se crea aqui: no depende de archivos adicionales del repositorio Prueba.
-          $guide = @'
-          ESTUDIO JOVEN - PRIMERA PRUEBA NATIVA
 
-          Este paquete contiene FilmCraft compilado con la caracteristica Whisper.
-          Es una version experimental sin cambios de marca ni animaciones estilo CapCut.
-
-          1. Extrae todos los archivos del ZIP en una carpeta de Windows.
-          2. Abre ABRIR_EDITOR_UNICO.bat o filmcraft.exe.
-          3. Importa tu video y busca el panel de transcripcion/subtitulos.
-          4. El modelo de IA puede necesitar descargarse la primera vez.
-          5. Edita los subtitulos y prueba la exportacion del video.
-
-          La funcion integrada utiliza Candle; NO reutiliza automaticamente
-          el archivo ggml-small.bin del prototipo anterior con whisper.cpp.
-          Si algo falla, conserva el mensaje de error o haz una captura.
-
-          Codigo fuente oficial: https://github.com/storytold/filmcraft
-          '@
-          $guide | Set-Content -LiteralPath "$destination/LEEME-AL-ABRIR.txt" -Encoding utf8
-          $launcher = @'
-          @echo off
-          setlocal
-          cd /d "%~dp0"
-          if not exist "filmcraft.exe" (
-            echo ERROR: No se encontro filmcraft.exe en esta carpeta.
-            pause
-            exit /b 1
+          # Listas de lineas, sin here-strings que puedan invalidar el YAML.
+          $instrucciones = @(
+            'FILMCRAFT CON IA LOCAL - PRUEBA PARA ESTUDIO JOVEN'
+            ''
+            'Esta es una compilacion experimental del editor FilmCraft original.'
+            'Whisper esta habilitado desde la compilacion de Rust.'
+            ''
+            '1. Extrae todos los archivos del ZIP.'
+            '2. Abre ABRIR_EDITOR_UNICO.bat o filmcraft.exe.'
+            '3. Carga un video y busca las herramientas de transcripcion.'
+            '4. Descarga el modelo que pida FilmCraft, si corresponde.'
+            '5. Prueba la creacion, edicion y exportacion de subtitulos.'
+            ''
+            'IMPORTANTE: la IA de esta compilacion usa Candle, no whisper.cpp.'
+            'El archivo ggml-small.bin anterior NO se reutiliza automaticamente.'
+            'Esta version conserva la interfaz y marca original de FilmCraft.'
+            ''
+            'Fuente: https://github.com/storytold/filmcraft'
           )
-          start "" "%~dp0filmcraft.exe"
-          '@
-          $launcher | Set-Content -LiteralPath "$destination/ABRIR_EDITOR_UNICO.bat" -Encoding ascii
-          $commit = git -C filmcraft-source rev-parse HEAD
-          "Codigo oficial storytold/filmcraft commit: $commit" | Set-Content -LiteralPath "$destination/ORIGEN.txt" -Encoding utf8
-          $checksum = (Get-FileHash -LiteralPath "$destination/filmcraft.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$checksum  filmcraft.exe" | Set-Content -LiteralPath "$destination/SHA256.txt" -Encoding ascii
-          Write-Host "EXE generado correctamente:"
-          Get-Item "$destination/filmcraft.exe" | Select-Object FullName,Length
-          Compress-Archive -Path "$destination/*" -DestinationPath "output/FilmCraft_IA_Integrada_Windows.zip" -CompressionLevel Optimal -Force
-          if (-not (Test-Path -LiteralPath "output/FilmCraft_IA_Integrada_Windows.zip")) {
-            throw "No se genero el ZIP de entrega"
-          }
-          Write-Host "ZIP listo para publicar."
+          $instrucciones | Set-Content -LiteralPath "$destino/LEEME-AL-ABRIR.txt" -Encoding utf8
 
-      - name: Publicar ZIP para descargar desde Actions
+          $iniciador = @(
+            '@echo off'
+            'setlocal'
+            'cd /d "%~dp0"'
+            'if not exist "filmcraft.exe" ('
+            '  echo No se encontro filmcraft.exe en esta carpeta.'
+            '  pause'
+            '  exit /b 1'
+            ')'
+            'start "" "%~dp0filmcraft.exe"'
+          )
+          $iniciador | Set-Content -LiteralPath "$destino/ABRIR_EDITOR_UNICO.bat" -Encoding ascii
+
+          $commit = (git -C filmcraft-source rev-parse HEAD).Trim()
+          "FilmCraft original: storytold/filmcraft`nCommit: $commit" | Set-Content -LiteralPath "$destino/ORIGEN.txt" -Encoding utf8
+          $sha = (Get-FileHash -LiteralPath "$destino/filmcraft.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$sha  filmcraft.exe" | Set-Content -LiteralPath "$destino/SHA256.txt" -Encoding ascii
+
+          $archivo = 'output/FilmCraft_IA_Integrada_Windows.zip'
+          Compress-Archive -Path "$destino/*" -DestinationPath $archivo -CompressionLevel Optimal -Force
+          if (-not (Test-Path -LiteralPath $archivo)) {
+            throw 'No se genero el ZIP final.'
+          }
+          Get-Item -LiteralPath $archivo | Select-Object FullName, Length
+
+      - name: Publicar archivo para descargar
         uses: actions/upload-artifact@v4
         with:
           name: FilmCraft-Whisper-Integrado-Windows
