@@ -44,8 +44,9 @@ replace(CAP,
     "            CaptionsMsg::TextEdited(text) => self.text = text,\n",
     "            CaptionsMsg::TextEdited(text) => self.text = text,\n            CaptionsMsg::Transcribe => self.run_sound(studio),\n")
 replace(CAP,
-    "                    self.chosen_with = studio.sole_selection();\n                }\n            }\n            CaptionsMsg::TextEdited",
+    "                    self.chosen_with = studio.sole_selection();\n                    self.message.clear();\n                }\n            }\n            CaptionsMsg::TextEdited",
     """                    self.chosen_with = studio.sole_selection();
+                    self.message.clear();
                     self.cached_voice = None;
                     self.text.clear();
                 }
