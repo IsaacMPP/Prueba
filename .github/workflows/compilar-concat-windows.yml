@@ -53,7 +53,7 @@ permissions:
   contents: read
 concurrency:
   group: concat-windows-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -146,6 +146,8 @@ jobs:
       # only runs on AVX2 machines.
       # Compile CUDA as a loadable ggml module, not a mandatory app dependency.
       GGML_CUDA: "ON"
+      # Avoid a hard import of the NVIDIA driver: CPU-only PCs must still boot.
+      GGML_CUDA_NO_VMM: "ON"
       CMAKE_CUDA_ARCHITECTURES: "75-real;86-real;89-virtual"
       GGML_BACKEND_DL: ${{ matrix.ggml == 'variants' && 'ON' || 'OFF' }}
       GGML_CPU_ALL_VARIANTS: ${{ matrix.ggml == 'variants' && 'ON' || 'OFF' }}
