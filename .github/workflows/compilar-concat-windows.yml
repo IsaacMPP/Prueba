@@ -48,11 +48,12 @@ on:
     paths:
       - '.github/workflows/compilar-concat-windows.yml'
       - 'patches/**'
+      - 'scripts/**'
 permissions:
   contents: read
 concurrency:
   group: concat-windows-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -112,7 +113,7 @@ jobs:
     # in v0.2.7-rc.1. The steps that can hang have timeouts of their own,
     # at most 155 minutes between them on any one target, so a stuck step
     # is named by its own timeout; this is for a job stuck anywhere else.
-    timeout-minutes: 190
+    timeout-minutes: 240
     env:
       # What whisper's CPU kernels are built for on x86_64, by the matrix's
       # `ggml` row. ggml's own switches default to AVX2 with FMA, F16C and
@@ -143,6 +144,11 @@ jobs:
       # Everything else is ARM, which reads none of these. The `haswell`
       # answer - built for Haswell outright - is kept for a target that
       # only runs on AVX2 machines.
+      # Compile CUDA as a loadable ggml module, not a mandatory app dependency.
+      GGML_CUDA: "ON"
+      # Avoid a hard import of the NVIDIA driver: CPU-only PCs must still boot.
+      GGML_CUDA_NO_VMM: "ON"
+      CMAKE_CUDA_ARCHITECTURES: "75-real;86-real;89-virtual"
       GGML_BACKEND_DL: ${{ matrix.ggml == 'variants' && 'ON' || 'OFF' }}
       GGML_CPU_ALL_VARIANTS: ${{ matrix.ggml == 'variants' && 'ON' || 'OFF' }}
       GGML_AVX2: ${{ matrix.ggml == 'haswell' && 'ON' || 'OFF' }}
@@ -170,6 +176,9 @@ jobs:
           set -euo pipefail
           git apply --check .estudio-joven/patches/text-motion.patch
           git apply .estudio-joven/patches/text-motion.patch
+          python .estudio-joven/scripts/ci/integrar-subtitulos.py
+          git apply --check .estudio-joven/patches/karaoke-gpu-fix.patch
+          git apply .estudio-joven/patches/karaoke-gpu-fix.patch
           python scripts/locales.py --check
       # The toolchain src/rust-toolchain.toml pins, installed by name, so the
       # runner never also fetches a stable it will not use.
@@ -180,6 +189,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (v1), 2026-10-09
         with:
           toolchain: ${{ steps.toolchain.outputs.channel }}
+
+      - name: Regresion de karaoke (palabras y tiempos)
+        shell: pwsh
+        run: |
+          rustc --edition 2024 --test src/crates/concat-project/src/caption_words.rs -o "$env:RUNNER_TEMP\caption-words-tests.exe"
+          if ($LASTEXITCODE -ne 0) { throw "No compilaron las pruebas de karaoke" }
+          & "$env:RUNNER_TEMP\caption-words-tests.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Fallo la separacion de palabras" }
 
       - name: Read the version
         id: version
@@ -348,10 +365,18 @@ jobs:
       # CC, CXX, CMAKE_*, and GGML_* and ORT_* added to the default set),
       # so a change to any of them is a new key rather than a stale
       # target/ served under the old one.
+      - name: CUDA Toolkit para Whisper (NVIDIA)
+        uses: Jimver/cuda-toolkit@b8bf9c6c28f8a92fbb04dcfcaee872e60c57462d # v0.2.36
+        with:
+          cuda: '12.9.1'
+          method: network
+          sub-packages: '["nvcc", "cudart", "cudart_dev", "cublas", "cublas_dev", "thrust"]'
+          use-github-cache: false
+
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: src
-          key: ${{ matrix.target }}
+          key: ${{ matrix.target }}-karaoke-cuda-12.9-v1
           env-vars: CARGO CC CFLAGS CXX CMAKE RUST GGML ORT
 
       # The shipping profile: fat LTO, panic=abort, stripped. See the
@@ -360,15 +385,27 @@ jobs:
       # Bash on every platform, teed to a log: raw job logs need a login to
       # read, but the step summary is public - so on failure the tail of the
       # build goes there, and a red run explains itself to anyone.
-      - name: Probar tiempos y guardado de animaciones
+      - name: Verificar compilacion de subtitulos y animaciones
         shell: bash
         working-directory: src
-        run: cargo test --locked -p concat-project --lib text_motion
+        run: |
+          set -euo pipefail
+          # Whisper on Windows loads ggml CPU variants dynamically. Unit-test
+          # executables link whisper-rs's SystemInfo::default, which references
+          # ggml_cpu_has_* symbols absent from that DLL-only configuration.
+          # cargo check typechecks the new speech/caption integration without
+          # linking a standalone test executable. The app and its smoke tests
+          # exercise the runtime after the release build.
+          cargo test --locked -p concat-project --lib text_motion
+          cargo test --locked -p concat-project --lib caption_words
+          cargo check --locked -p concat-speech -p concat
+          python -m py_compile ../.estudio-joven/scripts/ci/integrar-subtitulos.py
+          python -m py_compile ../.estudio-joven/scripts/tools/inspeccionar_mogrt.py
 
       - name: Build
         # An Intel Mac runner is the slow one: its release build ran past
         # sixty minutes in v0.2.7-rc.1.
-        timeout-minutes: ${{ matrix.platform == 'macos' && matrix.arch == 'x86_64' && 100 || 60 }}
+        timeout-minutes: ${{ matrix.platform == 'macos' && matrix.arch == 'x86_64' && 100 || 120 }}
         shell: bash
         working-directory: src
         run: |
@@ -422,6 +459,12 @@ jobs:
             foreach ($module in "x64", "sandybridge", "haswell") {
               if (-not (Test-Path "$dir\ggml-cpu-$module.dll")) { throw "ggml-cpu-$module.dll is missing from the build" }
             }
+          }
+          if (-not (Test-Path "$dir\ggml-cuda.dll")) { throw "CUDA backend was not built" }
+          foreach ($pattern in "cudart64_*.dll", "cublas64_*.dll", "cublasLt64_*.dll") {
+            $runtime = @(Get-ChildItem "$env:CUDA_PATH\bin\$pattern")
+            if ($runtime.Count -eq 0) { throw "Missing CUDA runtime: $pattern" }
+            Copy-Item $runtime.FullName $dir
           }
           Copy-Item LICENSE, THIRD_PARTY_NOTICES.md $dir
           # The Visual C++ runtime DLLs anything in the folder imports, from
@@ -612,6 +655,7 @@ jobs:
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Concat-Estudio-Joven-Animaciones-${{ matrix.platform }}-${{ matrix.arch }}
+          name: Estudio-Joven-Karaoke-Pop-CUDA-${{ matrix.platform }}-${{ matrix.arch }}
           path: stage/*
           if-no-files-found: error
+
