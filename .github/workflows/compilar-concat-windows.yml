@@ -174,6 +174,8 @@ jobs:
           git apply .estudio-joven/patches/text-motion.patch
           python .estudio-joven/scripts/ci/integrar-subtitulos.py
           python .estudio-joven/scripts/ci/mejorar-subtitulos.py
+          python .estudio-joven/scripts/ci/karaoke_motor.py
+          python .estudio-joven/scripts/ci/transcripcion_primero.py
           python scripts/locales.py --check
       # The toolchain src/rust-toolchain.toml pins, installed by name, so the
       # runner never also fetches a stable it will not use.
@@ -386,9 +388,13 @@ jobs:
           # exercise the runtime after the release build.
           cargo test --locked -p concat-project --lib text_motion
           cargo test --locked -p concat-project --lib caption_words
+          cargo test --locked -p concat-project --lib karaoke
+          cargo test --locked -p concat-effects --lib every_built_in_package_loads_and_its_fixtures_pass
           cargo check --locked -p concat-speech -p concat
           python -m py_compile ../.estudio-joven/scripts/ci/integrar-subtitulos.py
           python -m py_compile ../.estudio-joven/scripts/ci/mejorar-subtitulos.py
+          python -m py_compile ../.estudio-joven/scripts/ci/karaoke_motor.py
+          python -m py_compile ../.estudio-joven/scripts/ci/transcripcion_primero.py
           python -m py_compile ../.estudio-joven/scripts/tools/inspeccionar_mogrt.py
 
       - name: Build
@@ -638,6 +644,6 @@ jobs:
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Concat-Estudio-Joven-Animaciones-${{ matrix.platform }}-${{ matrix.arch }}
+          name: Estudio-Joven-Transcripcion-Karaoke-Dinamico-${{ matrix.platform }}-${{ matrix.arch }}
           path: stage/*
           if-no-files-found: error
