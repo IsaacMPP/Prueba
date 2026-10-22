@@ -172,6 +172,7 @@ jobs:
           git apply --check .estudio-joven/patches/text-motion.patch
           git apply .estudio-joven/patches/text-motion.patch
           python .estudio-joven/scripts/ci/integrar-subtitulos.py
+          python .estudio-joven/scripts/ci/mejorar-subtitulos.py
           python scripts/locales.py --check
       # The toolchain src/rust-toolchain.toml pins, installed by name, so the
       # runner never also fetches a stable it will not use.
@@ -374,8 +375,10 @@ jobs:
           # linking a standalone test executable. The app and its smoke tests
           # exercise the runtime after the release build.
           cargo test --locked -p concat-project --lib text_motion
+          cargo test --locked -p concat-project --lib caption_words
           cargo check --locked -p concat-speech -p concat
           python -m py_compile ../.estudio-joven/scripts/ci/integrar-subtitulos.py
+          python -m py_compile ../.estudio-joven/scripts/ci/mejorar-subtitulos.py
           python -m py_compile ../.estudio-joven/scripts/tools/inspeccionar_mogrt.py
 
       - name: Build
