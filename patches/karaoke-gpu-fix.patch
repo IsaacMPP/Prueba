@@ -1,0 +1,381 @@
+--- a/scripts/ci/isa-allow.txt
++++ b/scripts/ci/isa-allow.txt
+@@ -94,3 +94,9 @@
+ # Haswell fails the build.
+ concat.exe                     -     -     ~1000  -          -
+ concat                         -     -     ~1000  -          -
++
++# Optional CUDA backend and vendor runtime; loaded only with a usable NVIDIA driver.
++ggml-cuda.dll                  any
++cudart64_*.dll                 any
++cublas64_*.dll                 any
++cublasLt64_*.dll               any
+--- a/src/crates/concat/src/lib.rs
++++ b/src/crates/concat/src/lib.rs
+@@ -2077,6 +2077,9 @@
+     }));
+     app.on_captions_mode_changed(on_window!(|state, index: i32| {
+         state.handle(Msg::Captions(CaptionsMsg::ModeChanged(index)));
++    }));
++    app.on_captions_device_changed(on_window!(|state, index: i32| {
++        state.handle(Msg::Captions(CaptionsMsg::DeviceChanged(index)));
+     }));
+     app.on_captions_begin(on_window!(|state| {
+         state.handle(Msg::Captions(CaptionsMsg::Begin));
+--- a/src/crates/concat/src/panes/captions.rs
++++ b/src/crates/concat/src/panes/captions.rs
+@@ -61,6 +61,7 @@
+     SizeChanged(i32),
+     /// 0 phrases, 1 semantic punctuation, 2 timed words.
+     ModeChanged(i32),
++    DeviceChanged(i32),
+     /// Run the pass the sheet describes.
+     Begin,
+     Cancel,
+@@ -124,6 +125,7 @@
+     pub size: usize,
+     /// 0 original phrases, 1 break sentences, 2 karaoke words.
+     pub mode: usize,
++    pub device: usize,
+     pub running: bool,
+     /// How far the running transcription looks.
+     pub pace: Pace,
+@@ -180,6 +182,7 @@
+             }
+             CaptionsMsg::SizeChanged(index) => self.size = (index.max(0) as usize).min(2),
+             CaptionsMsg::ModeChanged(index) => self.mode = (index.max(0) as usize).min(2),
++            CaptionsMsg::DeviceChanged(index) => self.device = (index.max(0) as usize).min(2),
+             CaptionsMsg::Begin => {
+                 if self.from_voice {
+                     self.run_sound(studio);
+@@ -206,7 +209,7 @@
+                             return;
+                         };
+                         let look = subject.look;
+-                        let base = studio.prefs.title_style.clone();
++                        let base = caption_look(studio.prefs.title_style.as_ref(), subject.mode);
+                         let commands: Vec<Command> = arrange_segments(segments, subject.mode)
+                             .into_iter()
+                             .filter_map(|segment| {
+@@ -215,7 +218,7 @@
+                                     caption_clip(
+                                         text,
+                                         subject.start + segment.start / subject.speed,
+-                                        ((segment.end - segment.start) / subject.speed).max(0.2),
++                                        (segment.end - segment.start) / subject.speed,
+                                         look,
+                                         base.as_ref(),
+                                     )
+@@ -418,6 +421,8 @@
+             clip,
+             chosen_with: studio.sole_selection(),
+             model,
++            mode: self.mode,
++            device: self.device,
+             placement: 0,
+             size: 1,
+             timings: std::mem::take(&mut self.timings),
+@@ -457,14 +462,13 @@
+         }
+         let look = self.look();
+         let mut at = f64::from(studio.playhead);
+-        let base = studio.prefs.title_style.clone();
+-        let commands: Vec<Command> = lines
+-            .into_iter()
+-            .map(|(text, seconds)| {
+-                let command = caption_clip(text, at, seconds, look, base.as_ref());
+-                at += seconds;
+-                command
+-            })
++        let base = caption_look(studio.prefs.title_style.as_ref(), self.mode);
++        let segments = lines.into_iter().map(|(text, seconds)| {
++            let start = at; at += seconds;
++            Segment { start, end: at, text, words: Vec::new() }
++        }).collect();
++        let commands: Vec<Command> = arrange_segments(segments, self.mode).into_iter()
++            .map(|s| caption_clip(s.text, s.start, s.end-s.start, look, base.as_ref()))
+             .collect();
+         let count = commands.len();
+         self.open = false;
+@@ -502,6 +506,7 @@
+             window: clip.duration * clip.speed,
+             model_id: model.clone(),
+             word_timestamps: self.mode == 2,
++            device: self.device as u8,
+         };
+         let dirs = studio.host.dirs.clone();
+         let transcriber = Arc::clone(&studio.host.transcriber);
+@@ -573,6 +578,7 @@
+             placement: self.placement as i32,
+             size: self.size as i32,
+             mode: self.mode as i32,
++            device: self.device as i32,
+             running: self.running,
+             progress: self.pace.floor,
+             ceiling: self.pace.ceiling,
+@@ -601,23 +607,12 @@
+             continue;
+         }
+         if mode == 2 {
+-            let mut words = segment.words.clone();
+-            // Fallback when Whisper's experimental timestamps are absent:
+-            // proportional word durations, explicitly approximate.
+-            if words.is_empty() {
+-                let parts: Vec<&str> = segment.text.split_whitespace().collect();
+-                let total = parts.iter().map(|w| w.chars().count()).sum::<usize>().max(1) as f64;
+-                let mut consumed = 0.0;
+-                for word in parts {
+-                    let portion = word.chars().count() as f64 / total;
+-                    let start = segment.start + (segment.end - segment.start) * consumed;
+-                    consumed += portion;
+-                    let end = segment.start + (segment.end - segment.start) * consumed;
+-                    words.push(concat_speech::transcribe::WordTiming {
+-                        start, end, text: word.to_owned(),
+-                    });
+-                }
+-            }
++            let words = concat_project::caption_words::split(
++                &segment.text, segment.start, segment.end,
++                segment.words.iter().map(|w| concat_project::caption_words::Word {
++                    text: w.text.clone(), start: w.start, end: w.end,
++                }).collect(),
++            );
+             for word in words {
+                 if word.end > word.start && !word.text.trim().is_empty() {
+                     result.push(Segment {
+@@ -821,6 +816,19 @@
+ 
+ /// One caption as a title clip: its words, when and for how long, and
+ /// its look.
++fn caption_look(base: Option<&TextStyle>, mode: usize) -> Option<TextStyle> {
++    if mode != 2 { return base.cloned(); }
++    let mut style = base.cloned().unwrap_or_default();
++    style.font_weight = 800.0;
++    style.color = "#FFE600".into();
++    style.stroke_color = "#111111".into();
++    style.stroke_width = 0.002;
++    style.motion = concat_project::text_motion::TextMotion {
++        entrance: 4, exit: 0, in_seconds: 0.12, out_seconds: 0.05, intensity: 0.8,
++    };
++    Some(style)
++}
++
+ fn caption_clip(
+     text: String,
+     start: f64,
+--- a/src/crates/concat/ui/app.slint
++++ b/src/crates/concat/ui/app.slint
+@@ -321,6 +321,7 @@
+     callback captions-placement-changed(index: int);
+     callback captions-size-changed(index: int);
+     callback captions-mode-changed(index: int);
++    callback captions-device-changed(index: int);
+     callback captions-begin();
+     callback captions-cancel();
+     callback captions-import-srt();
+@@ -715,6 +716,7 @@
+             placement-changed(index) => { root.captions-placement-changed(index); }
+             size-changed(index) => { root.captions-size-changed(index); }
+             mode-changed(index) => { root.captions-mode-changed(index); }
++            device-changed(index) => { root.captions-device-changed(index); }
+             begin => { root.captions-begin(); }
+             cancel => { root.captions-cancel(); }
+             import-srt => { root.captions-import-srt(); }
+--- a/src/crates/concat/ui/dialogs/captions.slint
++++ b/src/crates/concat/ui/dialogs/captions.slint
+@@ -47,6 +47,7 @@
+     size: int,
+     /// 0 standard, 1 punctuation, 2 word karaoke.
+     mode: int,
++    device: int,
+     running: bool,
+     /// 0..1: where the transcription surely is.
+     progress: float,
+@@ -77,6 +78,7 @@
+     callback placement-changed(index: int);
+     callback size-changed(index: int);
+     callback mode-changed(index: int);
++    callback device-changed(index: int);
+     callback begin();
+     callback cancel();
+     callback import-srt();
+@@ -231,15 +233,29 @@
+                 }
+             }
+ 
+-            if root.from-voice: DialogRow {
++            DialogRow {
+                 label: "Estilo";
+                 SegmentedControl {
+-                    options: ["Normal", "Oraciones", "Karaoke"];
++                    options: ["Normal", "Oraciones", "Karaoke pop"];
+                     current: root.data.mode;
+                     changed(index) => { root.mode-changed(index); }
+                 }
+             }
+ 
++            if root.data.mode == 2: Text {
++                text: "Una palabra a la vez, amarilla y con rebote. Genera nuevos clips; no cambia los anteriores. Sin audio, los tiempos son aproximados.";
++                wrap: word-wrap;
++                color: Theme.fg-muted;
++                font-size: Theme.fs;
++            }
++            if root.from-voice: DialogRow {
++                label: "Transcribir con";
++                SegmentedControl {
++                    options: ["Auto", "CPU", "GPU"];
++                    current: root.data.device;
++                    changed(index) => { root.device-changed(index); }
++                }
++            }
+             DialogRow {
+                 label: I18n.t("common.size");
+                 SegmentedControl {
+--- /dev/null
++++ b/src/crates/concat-project/src/caption_words.rs
+@@ -0,0 +1,46 @@
++// SPDX-License-Identifier: AGPL-3.0-or-later
++//! Keep karaoke lexical boundaries independent of Whisper BPE boundaries.
++#[derive(Clone, Debug, PartialEq)]
++pub struct Word { pub text: String, pub start: f64, pub end: f64 }
++
++pub fn split(text: &str, start: f64, end: f64, timed: Vec<Word>) -> Vec<Word> {
++    if !start.is_finite() || !end.is_finite() || end <= start { return vec![]; }
++    let parts: Vec<&str> = text.split_whitespace().collect();
++    if parts.is_empty() { return vec![]; }
++    // Never trust concatenated/missing tokens, special tokens or overlapping
++    // timestamps. Recover the complete transcript with approximate timing.
++    let valid = timed.len() == parts.len() && timed.iter().zip(&parts).all(|(w,p)|
++        w.text.trim() == *p && w.start.is_finite() && w.end.is_finite()
++        && w.start >= start && w.end <= end && w.end > w.start)
++        && timed.windows(2).all(|p| p[0].end <= p[1].start);
++    if valid { return timed; }
++    let total = parts.iter().map(|w| w.chars().count()).sum::<usize>().max(1) as f64;
++    let mut used = 0.0;
++    parts.into_iter().map(|p| {
++        let a = start + (end-start)*used/total;
++        used += p.chars().count() as f64;
++        Word { text: p.into(), start: a, end: start+(end-start)*used/total }
++    }).collect()
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn caption_words_never_return_a_paragraph_even_with_bad_tokens() {
++        let text = "Dios nos ama y nos da esperanza";
++        for timed in [vec![], vec![Word { text: text.into(), start: 0.0, end: 1.0 }]] {
++            let words = split(text,0.0,1.0,timed);
++            assert_eq!(words.len(),7);
++            assert!(words.iter().all(|w| w.text.split_whitespace().count()==1));
++            assert!(words.windows(2).all(|w| w[0].end<=w[1].start));
++            assert_eq!(words.last().unwrap().end,1.0);
++        }
++    }
++    #[test]
++    fn caption_words_preserve_valid_timing_and_short_words() {
++        let words=vec![Word{text:"Hola".into(),start:1.0,end:1.08},Word{text:"mundo".into(),start:1.08,end:1.2}];
++        assert_eq!(split("Hola mundo",1.0,1.2,words.clone()),words);
++        assert!(split("hola",f64::NAN,1.0,vec![]).is_empty());
++    }
++}
+--- a/src/crates/concat-project/src/lib.rs
++++ b/src/crates/concat-project/src/lib.rs
+@@ -5388,3 +5388,5 @@
+         );
+     }
+ }
++
++pub mod caption_words;
+--- a/src/crates/concat-speech/src/transcribe.rs
++++ b/src/crates/concat-speech/src/transcribe.rs
+@@ -218,6 +218,19 @@
+         .clone()
+ }
+ 
++/// Read the backend registry after cpu_backend has loaded bundled modules.
++fn gpu_backend() -> Option<String> {
++    use whisper_rs::whisper_rs_sys as sys;
++    // SAFETY: ggml owns registered devices and their static descriptions.
++    unsafe {
++        let device = sys::ggml_backend_dev_by_type(sys::ggml_backend_dev_type_GGML_BACKEND_DEVICE_TYPE_GPU);
++        if device.is_null() { return None; }
++        let description = sys::ggml_backend_dev_description(device);
++        if description.is_null() { return Some("GPU".into()); }
++        Some(std::ffi::CStr::from_ptr(description).to_string_lossy().into_owned())
++    }
++}
++
+ fn model_file(dirs: &AppDirs, id: &str) -> Result<PathBuf, String> {
+     // Ids come from our own table; anything else is a bug, not input.
+     known(id).ok_or_else(|| format!("unknown model {id:?}"))?;
+@@ -295,10 +308,14 @@
+     /// Enable Whisper's experimental token timestamps for word karaoke.
+     #[serde(default)]
+     pub word_timestamps: bool,
++    /// 0 auto, 1 force CPU, 2 require a registered GPU.
++    #[serde(default)]
++    pub device: u8,
+ }
+ 
+ struct LoadedModel {
+     id: String,
++    device: u8,
+     context: WhisperContext,
+ }
+ 
+@@ -469,15 +486,33 @@
+             .model
+             .lock()
+             .map_err(|_| "transcriber state poisoned".to_owned())?;
+-        if loaded.as_ref().map(|model| model.id.as_str()) != Some(request.model_id.as_str()) {
++        if loaded.as_ref().map(|model| (model.id.as_str(), model.device)) != Some((request.model_id.as_str(), request.device)) {
+             // Load before overwriting: a failed load keeps the old model.
+             progress(JobStage::Loading);
+             cpu_backend()?;
+-            let context =
+-                WhisperContext::new_with_params(&model_path, WhisperContextParameters::default())
+-                    .map_err(|error| format!("could not load the model: {error}"))?;
++            let gpu = gpu_backend();
++            if request.device == 2 && gpu.is_none() {
++                return Err("GPU no disponible para Whisper. Instala la version CUDA y actualiza el controlador NVIDIA, o selecciona CPU/Auto.".into());
++            }
++            let use_gpu = request.device != 1 && gpu.is_some();
++            log::info!("whisper: requested device={}, selected={}", request.device,
++                if use_gpu { gpu.as_deref().unwrap_or("GPU") } else { "CPU" });
++            let mut params = WhisperContextParameters::default();
++            params.use_gpu(use_gpu);
++            let context = match WhisperContext::new_with_params(&model_path, params) {
++                Ok(context) => context,
++                Err(error) if request.device == 0 && use_gpu => {
++                    log::warn!("whisper: GPU initialization failed ({error}); using CPU");
++                    let mut params = WhisperContextParameters::default();
++                    params.use_gpu(false);
++                    WhisperContext::new_with_params(&model_path, params)
++                        .map_err(|e| format!("could not load the model on CPU: {e}"))?
++                }
++                Err(error) => return Err(format!("could not load the model: {error}")),
++            };
+             *loaded = Some(LoadedModel {
+                 id: request.model_id.clone(),
++                device: request.device,
+                 context,
+             });
+         }
+@@ -497,6 +532,7 @@
+         params.set_n_threads(threads as i32);
+         params.set_token_timestamps(request.word_timestamps);
+         params.set_split_on_word(request.word_timestamps);
++        if request.word_timestamps { params.set_max_len(48); }
+         // The language is whisper's to hear, when it can hear more than
+         // one: a multilingual model detects it from the first window. An
+         // English-only model asked for "auto" still runs the detection,
+@@ -692,6 +728,7 @@
+             window: 30.0,
+             model_id: "tiny.en".to_owned(),
+             word_timestamps: false,
++            device: 0,
+         };
+         let segments = transcriber
+             .transcribe(&dirs, &request, |stage| eprintln!("{stage:?}"))

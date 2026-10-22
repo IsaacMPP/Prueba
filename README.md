@@ -15,11 +15,18 @@ En clips cortos, entrada y salida reducen su duración proporcionalmente para ev
 
 La configuración original ya compiló correctamente; esta versión modificada requiere su propia compilación y prueba visual en Windows. El resultado de cada ejecución está en Actions.
 
-No incluye todavía karaoke, sincronización por palabra ni aceleración CUDA. La transcripción conserva el motor CPU original. Los modelos se descargan desde la aplicación.
+Los modelos se descargan desde la aplicación. Las mejoras de karaoke y CUDA se describen abajo y requieren el instalador generado desde esta rama.
 
 Concat conserva su nombre, créditos y licencia AGPL-3.0-or-later. Fuente: https://github.com/jub0t/Concat/tree/2756209a92766a4e4726999a51648349a272c159 . Los instaladores incluyen los avisos legales originales. FilmCraft permanece únicamente en el historial.
 
-## Desarrollo experimental (rama feature/karaoke-dialogos-mogrt-cuda)
-Esta rama aplica `scripts/ci/integrar-subtitulos.py` sobre el código fuente fijado de Concat y agrega al panel de subtítulos los modos **Normal**, **Oraciones** y **Karaoke**. El modo Oraciones separa frases por puntuación con tiempos proporcionales, NO identifica automáticamente personas distintas. Karaoke usa tiempos experimentales de tokens Whisper y crea clips de texto editables por palabra; no implementa todavía un resaltado progresivo dentro de una sola línea como CapCut.
+## Karaoke pop y transcripción CUDA (corrección experimental)
 
-**MOGRT:** `python scripts/tools/inspeccionar_mogrt.py archivo.mogrt` lista metadatos; no importa ni reproduce plantillas de After Effects. Los MOGRT arbitrarios exigen conversión o un motor compatible. **CUDA/RTX:** pendiente de integración y verificación. El paquete Windows actual mantiene Whisper CPU. Estas mejoras requieren que GitHub Actions compile y que se hagan pruebas visuales en Windows antes de considerarlas listas para uso general.
+En Subtítulos selecciona **Karaoke pop**: una palabra por clip, amarilla con contorno y entrada de rebote. Funciona con voz o texto escrito. No es todavía resaltado progresivo de una frase completa ni una biblioteca de efectos CapCut. La selección se conserva al reabrir el panel. Cambiar de modo no transforma subtítulos existentes: elimínalos o deshaz su generación antes de generar de nuevo para no superponerlos.
+
+La separación valida los tokens contra el texto original; si faltan palabras o los tiempos se superponen, recupera todas las palabras con tiempos proporcionales aproximados. Los tiempos de Whisper son experimentales. Se elimina el mínimo artificial de 0.2 segundos que hacía superponerse las palabras rápidas. Los textos escritos siempre usan tiempos aproximados.
+
+En **Transcribir con** elige **Auto**, **CPU** o **GPU**. La compilación incluye el módulo dinámico CUDA 12.9.1 y sus bibliotecas, con kernels para RTX 20/30 y PTX para generaciones posteriores. Tu RTX 3070 Ti corresponde a la arquitectura 86. No necesitas instalar el Toolkit para usar el instalador; sí un controlador NVIDIA compatible. Auto elige una GPU registrada o CPU y vuelve a CPU si falla la inicialización de GPU. GPU exige un dispositivo disponible y muestra un error si no lo encuentra. El registro de la aplicación identifica el backend seleccionado y las posibles caídas a CPU; cambiar dispositivo recarga el modelo.
+
+El artefacto nuevo se llama **Estudio-Joven-Karaoke-Pop-CUDA-windows-x86_64**. Las pruebas de GitHub validan separación, compilación y arranque sin NVIDIA; el rendimiento y la sincronización real necesitan una prueba con audio y la GPU del usuario. No se afirma que una compilación correcta pruebe CUDA en hardware.
+
+**Oraciones** separa por puntuación, no identifica hablantes. **MOGRT** conserva el inspector de metadatos, sin reproducción de proyectos Adobe.
