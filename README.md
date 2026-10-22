@@ -1,20 +1,20 @@
-# Estudio Joven — base Concat
+# Estudio Joven — Concat con animaciones de texto
 
-Este repositorio sustituye la compilación anterior de FilmCraft por Concat para Windows x64.
+Base fijada a jub0t/Concat, commit `2756209a92766a4e4726999a51648349a272c159`.
 
-## Compilar
-En Actions, selecciona **Concat - Windows** y **Run workflow**. Al terminar correctamente, descarga el artefacto **Concat-windows-x86_64**, que contiene los instaladores EXE y MSI.
+## Compilar y descargar
+En Actions ejecuta **Concat - Windows**. Al terminar con éxito, descarga **Concat-Estudio-Joven-Animaciones-windows-x86_64**, con instaladores EXE y MSI. El flujo también se ejecuta cuando cambia el parche.
 
-La primera compilación se inicia al incorporar esta configuración. El flujo conserva las dependencias verificadas y las pruebas de arranque del proyecto original.
+## Animaciones (primera versión experimental)
+Selecciona uno o varios bloques de texto en la línea de tiempo y abre **Texto → Animación de texto**. Elige Entrada y Salida entre Ninguna, Desvanecer, Deslizar, Zoom y Rebote. Ajusta las duraciones (0.05–3 segundos) y la intensidad. Reproduce desde el inicio del bloque para ver el efecto. Los cambios se aplican inmediatamente a todos los textos seleccionados y se pueden deshacer.
 
-## Código fuente
-El flujo descarga `jub0t/Concat` en el commit fijo `2756209a92766a4e4726999a51648349a272c159`, correspondiente al ZIP Concat-main.zip revisado. El código completo se obtiene durante la compilación, no está duplicado en este repositorio.
+En clips cortos, entrada y salida reducen su duración proporcionalmente para evitar superponerse. Los parámetros se guardan con el proyecto; los fotogramas clave originales se conservan. La vista previa y la exportación usan la misma preparación de animación. Para quitar un efecto, selecciona Ninguna en ambas listas. El botón de estilo predeterminado también conserva estas opciones para futuros títulos y subtítulos.
 
-Fuente: https://github.com/jub0t/Concat/tree/2756209a92766a4e4726999a51648349a272c159
+## Fuente y pruebas
+`patches/text-motion.patch` contiene todas las modificaciones sobre la fuente original. El workflow obtiene el código fijado, aplica el parche y ejecuta pruebas de tiempos, persistencia, composición con fotogramas clave y paridad entre vista previa/exportación antes de empaquetar. Además mantiene las pruebas de arranque y compatibilidad CPU del proyecto original.
 
-La receta de compilación se adapta de `.github/workflows/build-app.yml` de ese commit. Concat conserva su nombre y créditos. El código original indica licencia AGPL-3.0-or-later; el empaquetado incluye LICENSE y THIRD_PARTY_NOTICES.md del proyecto.
+La configuración original ya compiló correctamente; esta versión modificada requiere su propia compilación y prueba visual en Windows. El resultado de cada ejecución está en Actions.
 
-## Estado
-Esta es la base original de Concat. Todavía no incluye nuevas animaciones, karaoke ni aceleración CUDA de transcripción. La compilación de Windows conserva los módulos optimizados de CPU del original. Los modelos se descargan desde la aplicación.
+No incluye todavía karaoke, sincronización por palabra ni aceleración CUDA. La transcripción conserva el motor CPU original. Los modelos se descargan desde la aplicación.
 
-FilmCraft se retiró de la rama actual; sus archivos anteriores permanecen en el historial de Git.
+Concat conserva su nombre, créditos y licencia AGPL-3.0-or-later. Fuente: https://github.com/jub0t/Concat/tree/2756209a92766a4e4726999a51648349a272c159 . Los instaladores incluyen los avisos legales originales. FilmCraft permanece únicamente en el historial.

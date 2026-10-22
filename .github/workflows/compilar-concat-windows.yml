@@ -47,6 +47,7 @@ on:
   push:
     paths:
       - '.github/workflows/compilar-concat-windows.yml'
+      - 'patches/**'
 permissions:
   contents: read
 concurrency:
@@ -156,6 +157,20 @@ jobs:
           repository: jub0t/Concat
           ref: 2756209a92766a4e4726999a51648349a272c159
           persist-credentials: false
+      - name: Obtener mejoras de Estudio Joven
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: .estudio-joven
+          persist-credentials: false
+      - name: Aplicar animaciones de texto
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check .estudio-joven/patches/text-motion.patch
+          git apply .estudio-joven/patches/text-motion.patch
+          python scripts/locales.py --check
       # The toolchain src/rust-toolchain.toml pins, installed by name, so the
       # runner never also fetches a stable it will not use.
       - name: The pinned toolchain
@@ -345,6 +360,11 @@ jobs:
       # Bash on every platform, teed to a log: raw job logs need a login to
       # read, but the step summary is public - so on failure the tail of the
       # build goes there, and a red run explains itself to anyone.
+      - name: Probar tiempos y guardado de animaciones
+        shell: bash
+        working-directory: src
+        run: cargo test --locked -p concat-project --lib text_motion
+
       - name: Build
         # An Intel Mac runner is the slow one: its release build ran past
         # sixty minutes in v0.2.7-rc.1.
@@ -482,6 +502,16 @@ jobs:
       # `--smoke` exit 0 with only Windows on the path; and on x86_64,
       # `--version` again under Intel's emulator posing as an Ivy Bridge
       # (#313). See scripts/ci/smoke-windows.ps1.
+      - name: Comprobar coherencia de vista previa y exportacion
+        shell: pwsh
+        working-directory: src
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $env:PATH = "$env:GITHUB_WORKSPACE\stage\Concat-$env:VERSION-windows-x86_64;$env:PATH"
+          cargo test --locked --profile app -p concat-host --lib text_motion_preview_and_export_share_animation
+          if ($LASTEXITCODE -ne 0) { throw 'Fallo la prueba de animacion de texto.' }
+
       - name: Smoke test (Windows)
         if: matrix.platform == 'windows'
         timeout-minutes: 15
@@ -582,6 +612,6 @@ jobs:
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Concat-${{ matrix.platform }}-${{ matrix.arch }}
+          name: Concat-Estudio-Joven-Animaciones-${{ matrix.platform }}-${{ matrix.arch }}
           path: stage/*
           if-no-files-found: error

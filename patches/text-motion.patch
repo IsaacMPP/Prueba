@@ -1,0 +1,930 @@
+--- a/src/crates/concat/locales/ar.json
++++ b/src/crates/concat/locales/ar.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "المعالج",
+   "sysinfo.renderer": "أداة التصيير",
+   "sysinfo.toolchain": "سلسلة الأدوات",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "الخلفية",
+   "textPanel.backgroundColor": "لون الخلفية",
+   "textPanel.backgroundOpacity": "عتامة الخلفية",
+--- a/src/crates/concat/locales/bn.json
++++ b/src/crates/concat/locales/bn.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "প্রসেসর",
+   "sysinfo.renderer": "রেন্ডারার",
+   "sysinfo.toolchain": "টুলচেইন",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "ব্যাকগ্রাউন্ড",
+   "textPanel.backgroundColor": "ব্যাকগ্রাউন্ডের রঙ",
+   "textPanel.backgroundOpacity": "ব্যাকগ্রাউন্ডের অস্বচ্ছতা",
+--- a/src/crates/concat/locales/de.json
++++ b/src/crates/concat/locales/de.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Prozessor",
+   "sysinfo.renderer": "Renderer",
+   "sysinfo.toolchain": "Toolchain",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Hintergrund",
+   "textPanel.backgroundColor": "Hintergrundfarbe",
+   "textPanel.backgroundOpacity": "Hintergrund-Deckkraft",
+--- a/src/crates/concat/locales/en.json
++++ b/src/crates/concat/locales/en.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Processor",
+   "sysinfo.renderer": "Renderer",
+   "sysinfo.toolchain": "Toolchain",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Background",
+   "textPanel.backgroundColor": "Background color",
+   "textPanel.backgroundOpacity": "Background opacity",
+--- a/src/crates/concat/locales/es.json
++++ b/src/crates/concat/locales/es.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Procesador",
+   "sysinfo.renderer": "Renderizador",
+   "sysinfo.toolchain": "Herramientas de compilación",
++  "textMotion.bounce": "Rebote",
++  "textMotion.entrance": "Entrada",
++  "textMotion.exit": "Salida",
++  "textMotion.fade": "Desvanecer",
++  "textMotion.help": "Reproduce el clip para ver el efecto. Los cambios se aplican a todos los textos seleccionados. En clips cortos se ajusta la duración automáticamente.",
++  "textMotion.inDuration": "Dur. entrada",
++  "textMotion.intensity": "Intensidad",
++  "textMotion.outDuration": "Dur. salida",
++  "textMotion.slide": "Deslizar",
++  "textMotion.title": "Animación de texto",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Fondo",
+   "textPanel.backgroundColor": "Color de fondo",
+   "textPanel.backgroundOpacity": "Opacidad del fondo",
+--- a/src/crates/concat/locales/fa.json
++++ b/src/crates/concat/locales/fa.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "پردازنده",
+   "sysinfo.renderer": "رندرر",
+   "sysinfo.toolchain": "زنجیره ابزار (Toolchain)",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "پس‌زمینه",
+   "textPanel.backgroundColor": "رنگ پس‌زمینه",
+   "textPanel.backgroundOpacity": "شفافیت پس‌زمینه",
+--- a/src/crates/concat/locales/fr.json
++++ b/src/crates/concat/locales/fr.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Processeur",
+   "sysinfo.renderer": "Moteur de rendu",
+   "sysinfo.toolchain": "Chaîne d'outils",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Arrière-plan",
+   "textPanel.backgroundColor": "Couleur d'arrière-plan",
+   "textPanel.backgroundOpacity": "Opacité de l'arrière-plan",
+--- a/src/crates/concat/locales/he.json
++++ b/src/crates/concat/locales/he.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "מעבד",
+   "sysinfo.renderer": "מרנדר",
+   "sysinfo.toolchain": "שרשרת כלים",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "רקע",
+   "textPanel.backgroundColor": "צבע רקע",
+   "textPanel.backgroundOpacity": "אטימות רקע",
+--- a/src/crates/concat/locales/hi.json
++++ b/src/crates/concat/locales/hi.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "प्रोसेसर",
+   "sysinfo.renderer": "रेंडरर",
+   "sysinfo.toolchain": "टूलचेन",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "बैकग्राउंड",
+   "textPanel.backgroundColor": "बैकग्राउंड रंग",
+   "textPanel.backgroundOpacity": "बैकग्राउंड अपारदर्शिता",
+--- a/src/crates/concat/locales/hr.json
++++ b/src/crates/concat/locales/hr.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Procesor",
+   "sysinfo.renderer": "Renderer",
+   "sysinfo.toolchain": "Alatni lanac",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Pozadina",
+   "textPanel.backgroundColor": "Boja pozadine",
+   "textPanel.backgroundOpacity": "Neprozirnost pozadine",
+--- a/src/crates/concat/locales/id.json
++++ b/src/crates/concat/locales/id.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Prosesor",
+   "sysinfo.renderer": "Perender",
+   "sysinfo.toolchain": "Rantai alat",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Latar belakang",
+   "textPanel.backgroundColor": "Warna latar belakang",
+   "textPanel.backgroundOpacity": "Opasitas latar belakang",
+--- a/src/crates/concat/locales/it.json
++++ b/src/crates/concat/locales/it.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Processore",
+   "sysinfo.renderer": "Renderer",
+   "sysinfo.toolchain": "Toolchain",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Sfondo",
+   "textPanel.backgroundColor": "Colore dello sfondo",
+   "textPanel.backgroundOpacity": "Opacità dello sfondo",
+--- a/src/crates/concat/locales/ja.json
++++ b/src/crates/concat/locales/ja.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "プロセッサ",
+   "sysinfo.renderer": "レンダラー",
+   "sysinfo.toolchain": "ツールチェーン",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "背景",
+   "textPanel.backgroundColor": "背景色",
+   "textPanel.backgroundOpacity": "背景の不透明度",
+--- a/src/crates/concat/locales/ko.json
++++ b/src/crates/concat/locales/ko.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "프로세서",
+   "sysinfo.renderer": "렌더러",
+   "sysinfo.toolchain": "툴체인",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "배경",
+   "textPanel.backgroundColor": "배경 색상",
+   "textPanel.backgroundOpacity": "배경 불투명도",
+--- a/src/crates/concat/locales/nl.json
++++ b/src/crates/concat/locales/nl.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Processor",
+   "sysinfo.renderer": "Renderer",
+   "sysinfo.toolchain": "Toolchain",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Achtergrond",
+   "textPanel.backgroundColor": "Achtergrondkleur",
+   "textPanel.backgroundOpacity": "Achtergronddekking",
+--- a/src/crates/concat/locales/pl.json
++++ b/src/crates/concat/locales/pl.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Procesor",
+   "sysinfo.renderer": "Moduł renderujący",
+   "sysinfo.toolchain": "Narzędzia kompilacji",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Tło",
+   "textPanel.backgroundColor": "Kolor tła",
+   "textPanel.backgroundOpacity": "Krycie tła",
+--- a/src/crates/concat/locales/pt-BR.json
++++ b/src/crates/concat/locales/pt-BR.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Processador",
+   "sysinfo.renderer": "Renderizador",
+   "sysinfo.toolchain": "Toolchain",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Fundo",
+   "textPanel.backgroundColor": "Cor do fundo",
+   "textPanel.backgroundOpacity": "Opacidade do fundo",
+--- a/src/crates/concat/locales/ru.json
++++ b/src/crates/concat/locales/ru.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Процессор",
+   "sysinfo.renderer": "Рендерер",
+   "sysinfo.toolchain": "Инструментарий",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Фон",
+   "textPanel.backgroundColor": "Цвет фона",
+   "textPanel.backgroundOpacity": "Непрозрачность фона",
+--- a/src/crates/concat/locales/th.json
++++ b/src/crates/concat/locales/th.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "โปรเซสเซอร์",
+   "sysinfo.renderer": "ตัวเรนเดอร์",
+   "sysinfo.toolchain": "ทูลเชน",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "พื้นหลัง",
+   "textPanel.backgroundColor": "สีพื้นหลัง",
+   "textPanel.backgroundOpacity": "ความทึบพื้นหลัง",
+--- a/src/crates/concat/locales/tr.json
++++ b/src/crates/concat/locales/tr.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "İşlemci",
+   "sysinfo.renderer": "İşleyici",
+   "sysinfo.toolchain": "Araç zinciri",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Arka plan",
+   "textPanel.backgroundColor": "Arka plan rengi",
+   "textPanel.backgroundOpacity": "Arka plan opaklığı",
+--- a/src/crates/concat/locales/uk.json
++++ b/src/crates/concat/locales/uk.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Процесор",
+   "sysinfo.renderer": "Рендерер",
+   "sysinfo.toolchain": "Інструментарій",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Фон",
+   "textPanel.backgroundColor": "Колір фону",
+   "textPanel.backgroundOpacity": "Непрозорість фону",
+--- a/src/crates/concat/locales/ur.json
++++ b/src/crates/concat/locales/ur.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "پروسیسر",
+   "sysinfo.renderer": "رینڈرر",
+   "sysinfo.toolchain": "ٹول چین",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "پس منظر",
+   "textPanel.backgroundColor": "پس منظر کا رنگ",
+   "textPanel.backgroundOpacity": "پس منظر کا دھندلاپن",
+--- a/src/crates/concat/locales/vi.json
++++ b/src/crates/concat/locales/vi.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "Bộ xử lý",
+   "sysinfo.renderer": "Bộ kết xuất",
+   "sysinfo.toolchain": "Bộ công cụ biên dịch",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "Nền",
+   "textPanel.backgroundColor": "Màu nền",
+   "textPanel.backgroundOpacity": "Độ mờ nền",
+--- a/src/crates/concat/locales/zh-Hans.json
++++ b/src/crates/concat/locales/zh-Hans.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "处理器",
+   "sysinfo.renderer": "渲染器",
+   "sysinfo.toolchain": "工具链",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "背景",
+   "textPanel.backgroundColor": "背景颜色",
+   "textPanel.backgroundOpacity": "背景不透明度",
+--- a/src/crates/concat/locales/zh-TW.json
++++ b/src/crates/concat/locales/zh-TW.json
+@@ -786,6 +786,17 @@
+   "sysinfo.processor": "處理器",
+   "sysinfo.renderer": "渲染器",
+   "sysinfo.toolchain": "工具鏈",
++  "textMotion.bounce": "Bounce",
++  "textMotion.entrance": "Entrance",
++  "textMotion.exit": "Exit",
++  "textMotion.fade": "Fade",
++  "textMotion.help": "Play the clip to preview. Changes apply to all selected titles. Short clips shorten the animation automatically.",
++  "textMotion.inDuration": "In duration",
++  "textMotion.intensity": "Intensity",
++  "textMotion.outDuration": "Out duration",
++  "textMotion.slide": "Slide",
++  "textMotion.title": "Text animation",
++  "textMotion.zoom": "Zoom",
+   "textPanel.background": "背景",
+   "textPanel.backgroundColor": "背景顏色",
+   "textPanel.backgroundOpacity": "背景不透明度",
+--- a/src/crates/concat/src/presets.rs
++++ b/src/crates/concat/src/presets.rs
+@@ -116,6 +116,7 @@
+     fn over(self, name: &str) -> TextStyle {
+         let base = TextStyle::default();
+         TextStyle {
++            motion: Default::default(),
+             content: self.content.unwrap_or_else(|| name.to_owned()),
+             font_family: self
+                 .font_family
+--- a/src/crates/concat/src/studio.rs
++++ b/src/crates/concat/src/studio.rs
+@@ -5400,6 +5400,11 @@
+                 }
+                 ClipField::FadeIn => clip.fade_in = value.clamp(0.0, clip.duration / 2.0),
+                 ClipField::FadeOut => clip.fade_out = value.clamp(0.0, clip.duration / 2.0),
++                ClipField::MotionIn => text.motion.entrance = value.clamp(0.0, 4.0) as u8,
++                ClipField::MotionOut => text.motion.exit = value.clamp(0.0, 4.0) as u8,
++                ClipField::MotionInSeconds => text.motion.in_seconds = value.clamp(0.05, 3.0),
++                ClipField::MotionOutSeconds => text.motion.out_seconds = value.clamp(0.05, 3.0),
++                ClipField::MotionIntensity => text.motion.intensity = value.clamp(0.1, 2.0),
+                 ClipField::FontSize => text.font_size = value.clamp(0.01, 0.5),
+                 ClipField::FontWeight => text.font_weight = value.clamp(100.0, 900.0),
+                 ClipField::Italic => text.italic = value != 0.0,
+@@ -10677,6 +10682,11 @@
+             family_row: family_row.unwrap_or(0) as i32,
+             font_missing: family_row.is_none()
+                 && !text.font_family.trim_matches('"').trim().is_empty(),
++            motion_in: i32::from(text.motion.entrance),
++            motion_out: i32::from(text.motion.exit),
++            motion_in_seconds: text.motion.in_seconds as f32,
++            motion_out_seconds: text.motion.out_seconds as f32,
++            motion_intensity: text.motion.intensity as f32,
+             font_size: text.font_size as f32,
+             font_weight: text.font_weight as f32,
+             italic: text.italic,
+--- a/src/crates/concat/ui/inspector/text-panel.slint
++++ b/src/crates/concat/ui/inspector/text-panel.slint
+@@ -55,6 +55,11 @@
+     // Local editing state, seeded rather than bound — see the note on
+     // AdjustPanel, which has the same problem for the same reason.
+     property <float> size;
++    property <int> motion-in;
++    property <int> motion-out;
++    property <float> motion-in-seconds;
++    property <float> motion-out-seconds;
++    property <float> motion-intensity;
+     property <float> alpha;
+     property <float> stroke-width;
+     property <float> stroke-alpha;
+@@ -90,6 +95,11 @@
+ 
+     function seed() {
+         root.size = root.selected.font-size;
++        root.motion-in = root.selected.motion-in;
++        root.motion-out = root.selected.motion-out;
++        root.motion-in-seconds = root.selected.motion-in-seconds;
++        root.motion-out-seconds = root.selected.motion-out-seconds;
++        root.motion-intensity = root.selected.motion-intensity;
+         root.alpha = root.selected.text-opacity;
+         root.stroke-width = root.selected.stroke-width;
+         root.stroke-alpha = root.selected.stroke-opacity;
+@@ -264,6 +274,62 @@
+                         return reject;
+                     }
+                 }
++            }
++        }
++    }
++
++    Section {
++        motion-header := SectionHeader {
++            title: I18n.t("textMotion.title");
++            collapsible: true;
++        }
++        if motion-header.open: SectionBody {
++            Text {
++                text: I18n.t("textMotion.help");
++                color: Theme.fg-muted;
++                font-size: Theme.fs;
++                wrap: word-wrap;
++            }
++            Row {
++                label: I18n.t("textMotion.entrance");
++                label-width: root.label-w;
++                Select {
++                    options: [I18n.t("common.none"), I18n.t("textMotion.fade"), I18n.t("textMotion.slide"), I18n.t("textMotion.zoom"), I18n.t("textMotion.bounce")];
++                    current <=> root.motion-in;
++                    changed(index) => { root.set(ClipField.motion-in, index); root.commit(); }
++                }
++            }
++            Param {
++                label: I18n.t("textMotion.inDuration");
++                value <=> root.motion-in-seconds;
++                minimum: 0.05; maximum: 3; step: 0.05; default-value: 0.35;
++                fmt: ParamFormat.seconds2;
++                unit: "s";
++                changed(v) => { root.set(ClipField.motion-in-seconds, v); root.commit(); }
++            }
++            Row {
++                label: I18n.t("textMotion.exit");
++                label-width: root.label-w;
++                Select {
++                    options: [I18n.t("common.none"), I18n.t("textMotion.fade"), I18n.t("textMotion.slide"), I18n.t("textMotion.zoom"), I18n.t("textMotion.bounce")];
++                    current <=> root.motion-out;
++                    changed(index) => { root.set(ClipField.motion-out, index); root.commit(); }
++                }
++            }
++            Param {
++                label: I18n.t("textMotion.outDuration");
++                value <=> root.motion-out-seconds;
++                minimum: 0.05; maximum: 3; step: 0.05; default-value: 0.25;
++                fmt: ParamFormat.seconds2;
++                unit: "s";
++                changed(v) => { root.set(ClipField.motion-out-seconds, v); root.commit(); }
++            }
++            Param {
++                label: I18n.t("textMotion.intensity");
++                value <=> root.motion-intensity;
++                minimum: 0.1; maximum: 2; step: 0.1; default-value: 1;
++                fmt: ParamFormat.ratio;
++                changed(v) => { root.set(ClipField.motion-intensity, v); root.commit(); }
+             }
+         }
+     }
+--- a/src/crates/concat/ui/timeline/model.slint
++++ b/src/crates/concat/ui/timeline/model.slint
+@@ -164,6 +164,7 @@
+ /// and alignment as its ordinal, which keeps this to two callbacks instead of
+ /// one per control.
+ export enum ClipField {
++    motion-in, motion-out, motion-in-seconds, motion-out-seconds, motion-intensity,
+     scale, offset-x, offset-y, rotation, stretch-x, stretch-y, opacity,
+     volume, speed, preserve-pitch, fade-in, fade-out,
+     flip-h, flip-v, blend, crop-left, crop-top, crop-right, crop-bottom,
+@@ -339,6 +340,11 @@
+ }
+ 
+ export struct SelectedClipData {
++    motion-in: int,
++    motion-out: int,
++    motion-in-seconds: float,
++    motion-out-seconds: float,
++    motion-intensity: float,
+     present: bool,
+     /// how many clips the panel writes to: one, or every selected title
+     /// when several are selected together, shown by the first's values
+--- a/src/crates/concat-host/src/titles.rs
++++ b/src/crates/concat-host/src/titles.rs
+@@ -226,7 +226,9 @@
+         }
+         let timeline = project.active();
+         let mut out = Vec::new();
+-        for clip in &timeline.clips {
++        for original in &timeline.clips {
++            let rendered = concat_project::text_motion::render_clip(original);
++            let clip = &rendered;
+             let (text, shape);
+             let painting = match clip.kind {
+                 ModelClipKind::Text => {
+@@ -273,10 +275,10 @@
+                     flip_v: clip.flip_v,
+                     blend: clip.blend.clone(),
+                     effects: clip.video_effects.clone(),
+-                    scale: clip.scale,
+-                    offset_x: clip.offset_x,
+-                    offset_y: clip.offset_y,
+-                    rotation: clip.rotation,
++                    scale: concat_export::flatten::export_base(clip, concat_project::model::KeyProperty::Scale),
++                    offset_x: concat_export::flatten::export_base(clip, concat_project::model::KeyProperty::OffsetX),
++                    offset_y: concat_export::flatten::export_base(clip, concat_project::model::KeyProperty::OffsetY),
++                    rotation: concat_export::flatten::export_base(clip, concat_project::model::KeyProperty::Rotation),
+                     // A title is never pulled along an axis: its box is
+                     // sized by the style, and its glyphs keep their shape.
+                     // 0.2.2's side grips wrote a stretch onto title clips
+@@ -296,8 +298,8 @@
+                     // The style's own opacity multiplies the clip's: a
+                     // half-transparent title fades to half, not to solid.
+                     opacity: match painting {
+-                        Painting::Title(text) => (clip.opacity * text.opacity).clamp(0.0, 1.0),
+-                        Painting::Shape(_) => clip.opacity.clamp(0.0, 1.0),
++                        Painting::Title(text) => (concat_export::flatten::export_base(clip, concat_project::model::KeyProperty::Opacity) * text.opacity).clamp(0.0, 1.0),
++                        Painting::Shape(_) => concat_export::flatten::export_base(clip, concat_project::model::KeyProperty::Opacity).clamp(0.0, 1.0),
+                     },
+                     media_width: Some(width),
+                     media_height: Some(height),
+@@ -609,6 +611,34 @@
+ mod tests {
+     use super::*;
+     use concat_project::{Command, Editor};
++
++    #[test]
++    fn text_motion_preview_and_export_share_animation() {
++        let dirs = scratch("text-motion");
++        let mut editor = Editor::new();
++        editor.apply(Command::AddTextClip {
++            above: false, track_id: None, start: 1.0, duration: Some(2.0), offset_y: Some(0.3),
++            style: Some(TextStyle {
++                opacity: 0.5,
++                motion: concat_project::text_motion::TextMotion {
++                    entrance: 4, exit: 2, ..Default::default()
++                },
++                ..Default::default()
++            }),
++        }).unwrap();
++        let titles = Titles::new(&dirs);
++        let preview = titles.clips_live(editor.project(), 320, 180);
++        let export = titles.clips(editor.project(), 640, 360);
++        assert_eq!(preview.len(), 1);
++        assert_eq!(export.len(), 1);
++        assert!(!preview[0].clip.animation.is_empty());
++        assert_eq!(preview[0].clip.animation, export[0].clip.animation);
++        assert_eq!(export[0].clip.scale, 1.0);
++        assert_eq!(export[0].clip.opacity, 0.5);
++        assert_eq!(export[0].clip.offset_y, 0.0);
++        assert_eq!(preview[0].clip.start, export[0].clip.start);
++        assert_eq!(preview[0].clip.duration, export[0].clip.duration);
++    }
+ 
+     fn scratch(name: &str) -> AppDirs {
+         let dir =
+--- a/src/crates/concat-project/src/lib.rs
++++ b/src/crates/concat-project/src/lib.rs
+@@ -28,6 +28,7 @@
+ pub mod placement;
+ pub mod speed;
+ pub mod srt;
++pub mod text_motion;
+ 
+ pub use commands::{
+     Command, CommandError, Outcome, PlayheadSide, consolidation_clips, delete_to_playhead,
+--- a/src/crates/concat-project/src/model.rs
++++ b/src/crates/concat-project/src/model.rs
+@@ -1462,6 +1462,8 @@
+ #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+ #[serde(rename_all = "camelCase", default)]
+ pub struct TextStyle {
++    /// Entrance and exit presets, evaluated only in the render copy.
++    pub motion: crate::text_motion::TextMotion,
+     /// The words themselves, newlines included. The clip's display name is
+     /// snapshotted from the first non-empty line.
+     pub content: String,
+@@ -1537,6 +1539,7 @@
+             if value.is_finite() { value } else { fallback }
+         }
+         let base = TextStyle::default();
++        self.motion = self.motion.tidy();
+         self.font_size = finite(self.font_size, base.font_size).clamp(0.01, 1.0);
+         self.font_weight = finite(self.font_weight, base.font_weight).clamp(100.0, 900.0);
+         self.opacity = finite(self.opacity, base.opacity).clamp(0.0, 1.0);
+@@ -1557,6 +1560,7 @@
+ impl Default for TextStyle {
+     fn default() -> Self {
+         Self {
++            motion: crate::text_motion::TextMotion::default(),
+             content: "Your text".to_owned(),
+             font_family: "\"Cabinet Grotesk\"".to_owned(),
+             font_size: 0.09,
+--- /dev/null
++++ b/src/crates/concat-project/src/text_motion.rs
+@@ -0,0 +1,169 @@
++// SPDX-License-Identifier: AGPL-3.0-or-later
++//! Non-destructive title entrance/exit presets, shared by preview and export.
++use serde::{Deserialize, Serialize};
++use crate::model::{Clip, ClipKey, ClipKind, KeyEase, KeyProperty};
++
++/// Presets: 0 none, 1 fade, 2 slide up, 3 zoom, 4 bounce.
++#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
++#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
++#[serde(rename_all = "camelCase", default)]
++pub struct TextMotion {
++    pub entrance: u8,
++    pub exit: u8,
++    pub in_seconds: f64,
++    pub out_seconds: f64,
++    pub intensity: f64,
++}
++
++impl Default for TextMotion {
++    fn default() -> Self {
++        Self { entrance: 0, exit: 0, in_seconds: 0.35, out_seconds: 0.25, intensity: 1.0 }
++    }
++}
++
++impl TextMotion {
++    pub fn tidy(mut self) -> Self {
++        fn bounded(n: f64, fallback: f64, min: f64, max: f64) -> f64 {
++            if n.is_finite() { n.clamp(min, max) } else { fallback }
++        }
++        if self.entrance > 4 { self.entrance = 0; }
++        if self.exit > 4 { self.exit = 0; }
++        self.in_seconds = bounded(self.in_seconds, 0.35, 0.05, 3.0);
++        self.out_seconds = bounded(self.out_seconds, 0.25, 0.05, 3.0);
++        self.intensity = bounded(self.intensity, 1.0, 0.1, 2.0);
++        self
++    }
++}
++
++// Progress is 0 when hidden and 1 when settled. Exit plays it backwards.
++fn motion(kind: u8, progress: f64, intensity: f64) -> (f64, f64, f64) {
++    let p = progress.clamp(0.0, 1.0);
++    let eased = 1.0 - (1.0 - p).powi(3);
++    match kind {
++        1 => (1.0, 0.0, eased),
++        2 => (1.0, 0.12 * intensity * (1.0 - eased), eased),
++        3 => ((1.0 - 0.35 * intensity * (1.0 - eased)).max(0.05), 0.0, eased),
++        4 => {
++            let c = 1.70158;
++            let q = p - 1.0;
++            let back = 1.0 + (c + 1.0) * q.powi(3) + c * q.powi(2);
++            ((1.0 + 0.5 * intensity * (back - 1.0)).max(0.05), 0.0, eased)
++        }
++        _ => (1.0, 0.0, 1.0),
++    }
++}
++
++/// Build a transient render copy; saved keyframes remain editable and untouched.
++/// Absolute user curves compose with the preset. Sampling includes their keys
++/// and both animation boundaries. Short clips proportionally shorten the ramps.
++pub fn render_clip(clip: &Clip) -> Clip {
++    let mut out = clip.clone();
++    if clip.kind != ClipKind::Text { return out; }
++    let Some(text) = &clip.text else { return out; };
++    let m = text.motion.clone().tidy();
++    if m.entrance == 0 && m.exit == 0 { return out; }
++    let duration = clip.duration.max(0.001);
++    let mut intro = if m.entrance == 0 { 0.0 } else { m.in_seconds };
++    let mut outro = if m.exit == 0 { 0.0 } else { m.out_seconds };
++    if intro + outro > duration {
++        let factor = duration / (intro + outro);
++        intro *= factor;
++        outro *= factor;
++    }
++    let a = intro / duration;
++    let b = 1.0 - outro / duration;
++    for property in [KeyProperty::Scale, KeyProperty::OffsetY, KeyProperty::Opacity] {
++        let needed = match property {
++            KeyProperty::Scale => m.entrance >= 3 || m.exit >= 3,
++            KeyProperty::OffsetY => m.entrance == 2 || m.exit == 2,
++            _ => true,
++        };
++        if !needed { continue; }
++        let track = clip.track_on(property).resample(64);
++        let mut times = vec![0.0, a, b, 1.0];
++        times.extend(track.keys().iter().map(|key| key.at));
++        for i in 0..=90 {
++            let t = f64::from(i) / 90.0;
++            if intro > 0.0 { times.push(a * t); }
++            if outro > 0.0 { times.push(b + (1.0 - b) * t); }
++        }
++        times.sort_by(f64::total_cmp);
++        times.dedup_by(|x, y| (*x - *y).abs() < 1e-9);
++        out.keys.retain(|key| key.property != property);
++        for at in times {
++            let entering = if intro > 0.0 { motion(m.entrance, at / a, m.intensity) } else { (1.0, 0.0, 1.0) };
++            let leaving = if outro > 0.0 { motion(m.exit, (1.0 - at) / (1.0 - b), m.intensity) } else { (1.0, 0.0, 1.0) };
++            let base = clip.value_at(property, at);
++            let value = match property {
++                KeyProperty::Scale => base * entering.0 * leaving.0,
++                KeyProperty::OffsetY => base + entering.1 + leaving.1,
++                _ => base * entering.2 * leaving.2,
++            };
++            // Do not use set_key: its editing tolerance merges nearby samples.
++            out.keys.push(ClipKey { property, at, value, ease: KeyEase::LINEAR });
++        }
++    }
++    out
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::model::TextStyle;
++
++    fn title(kind: u8) -> Clip {
++        let mut clip = Clip::blank("t", "track", ClipKind::Text, "Test", 0.0, 2.0);
++        clip.text = Some(TextStyle { motion: TextMotion { entrance: kind, exit: kind, ..Default::default() }, ..Default::default() });
++        clip
++    }
++
++    #[test]
++    fn text_motion_roundtrips_and_old_styles_default_to_none() {
++        let old: TextStyle = serde_json::from_str(r#"{"content":"Hola"}"#).unwrap();
++        assert_eq!(old.motion, TextMotion::default());
++        let clip = title(4);
++        let saved = serde_json::to_string(&clip).unwrap();
++        let loaded: Clip = serde_json::from_str(&saved).unwrap();
++        assert_eq!(loaded.text.unwrap().motion, clip.text.unwrap().motion);
++    }
++
++    #[test]
++    fn text_motion_respects_edges_rest_and_existing_keys() {
++        for kind in 1..=4 {
++            let mut clip = title(kind);
++            clip.scale = 0.8;
++            clip.offset_y = 0.3;
++            clip.opacity = 0.6;
++            clip.set_key(KeyProperty::Rotation, 0.0, 20.0, KeyEase::LINEAR);
++            clip.set_key(KeyProperty::Scale, 0.0, 0.7, KeyEase::LINEAR);
++            clip.set_key(KeyProperty::Scale, 1.0, 1.1, KeyEase::LINEAR);
++            let before = clip.clone();
++            let rendered = render_clip(&clip);
++            assert_eq!(clip, before);
++            assert_eq!(rendered.value_at(KeyProperty::Opacity, 0.0), 0.0);
++            assert_eq!(rendered.value_at(KeyProperty::Opacity, 1.0), 0.0);
++            assert!((rendered.value_at(KeyProperty::Opacity, 0.5) - 0.6).abs() < 1e-6);
++            assert!((rendered.value_at(KeyProperty::Scale, 0.5) - 0.9).abs() < 1e-6);
++            assert!((rendered.value_at(KeyProperty::OffsetY, 0.5) - 0.3).abs() < 1e-6);
++            assert_eq!(rendered.value_at(KeyProperty::Rotation, 0.5), 20.0);
++        }
++    }
++
++    #[test]
++    fn text_motion_short_clips_and_removal_are_safe() {
++        let mut clip = title(4);
++        clip.duration = 0.08;
++        let rendered = render_clip(&clip);
++        assert!(rendered.keys.iter().all(|key| key.value.is_finite() && (0.0..=1.0).contains(&key.at)));
++        clip.text.as_mut().unwrap().motion = TextMotion::default();
++        assert_eq!(render_clip(&clip), clip);
++        assert_eq!(TextMotion { intensity: f64::NAN, in_seconds: f64::INFINITY, ..Default::default() }.tidy().intensity, 1.0);
++    }
++
++    #[test]
++    fn text_motion_bounce_overshoots_and_slide_moves_down_before_settling() {
++        assert!(motion(4, 0.65, 1.0).0 > 1.0);
++        assert!(motion(2, 0.0, 1.0).1 > 0.0);
++        assert_eq!(motion(2, 1.0, 1.0), (1.0, 0.0, 1.0));
++    }
++}
