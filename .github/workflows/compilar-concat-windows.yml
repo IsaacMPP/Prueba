@@ -48,11 +48,13 @@ on:
     paths:
       - '.github/workflows/compilar-concat-windows.yml'
       - 'patches/**'
+      - 'scripts/**'
 permissions:
   contents: read
 concurrency:
   group: concat-windows-${{ github.ref }}
-  cancel-in-progress: false
+  # Cancel obsolete feature-branch builds; keep release/main builds intact.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -170,6 +172,8 @@ jobs:
           set -euo pipefail
           git apply --check .estudio-joven/patches/text-motion.patch
           git apply .estudio-joven/patches/text-motion.patch
+          python .estudio-joven/scripts/ci/integrar-subtitulos.py
+          python .estudio-joven/scripts/ci/mejorar-subtitulos.py
           python scripts/locales.py --check
       # The toolchain src/rust-toolchain.toml pins, installed by name, so the
       # runner never also fetches a stable it will not use.
@@ -180,6 +184,15 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (v1), 2026-10-09
         with:
           toolchain: ${{ steps.toolchain.outputs.channel }}
+
+      - name: Probar separación de frases y karaoke sin Whisper
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          rustc --edition 2024 --test src/crates/concat-project/src/caption_words.rs -o "$env:RUNNER_TEMP\caption-words-tests.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Falló compilación del separador de subtítulos" }
+          & "$env:RUNNER_TEMP\caption-words-tests.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Fallaron pruebas de karaoke/frases" }
 
       - name: Read the version
         id: version
@@ -360,10 +373,23 @@ jobs:
       # Bash on every platform, teed to a log: raw job logs need a login to
       # read, but the step summary is public - so on failure the tail of the
       # build goes there, and a red run explains itself to anyone.
-      - name: Probar tiempos y guardado de animaciones
+      - name: Verificar compilacion de subtitulos y animaciones
         shell: bash
         working-directory: src
-        run: cargo test --locked -p concat-project --lib text_motion
+        run: |
+          set -euo pipefail
+          # Whisper on Windows loads ggml CPU variants dynamically. Unit-test
+          # executables link whisper-rs's SystemInfo::default, which references
+          # ggml_cpu_has_* symbols absent from that DLL-only configuration.
+          # cargo check typechecks the new speech/caption integration without
+          # linking a standalone test executable. The app and its smoke tests
+          # exercise the runtime after the release build.
+          cargo test --locked -p concat-project --lib text_motion
+          cargo test --locked -p concat-project --lib caption_words
+          cargo check --locked -p concat-speech -p concat
+          python -m py_compile ../.estudio-joven/scripts/ci/integrar-subtitulos.py
+          python -m py_compile ../.estudio-joven/scripts/ci/mejorar-subtitulos.py
+          python -m py_compile ../.estudio-joven/scripts/tools/inspeccionar_mogrt.py
 
       - name: Build
         # An Intel Mac runner is the slow one: its release build ran past
