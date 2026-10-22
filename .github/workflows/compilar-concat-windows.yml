@@ -190,6 +190,14 @@ jobs:
         with:
           toolchain: ${{ steps.toolchain.outputs.channel }}
 
+      - name: Regresion de karaoke (palabras y tiempos)
+        shell: pwsh
+        run: |
+          rustc --edition 2024 --test src/crates/concat-project/src/caption_words.rs -o "$env:RUNNER_TEMP\caption-words-tests.exe"
+          if ($LASTEXITCODE -ne 0) { throw "No compilaron las pruebas de karaoke" }
+          & "$env:RUNNER_TEMP\caption-words-tests.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Fallo la separacion de palabras" }
+
       - name: Read the version
         id: version
         shell: bash
