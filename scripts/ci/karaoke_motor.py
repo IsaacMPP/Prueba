@@ -323,4 +323,8 @@ replace(PANEL,
             }
         }""")
 
+replace("src/crates/concat/src/presets.rs",
+    "        TextStyle {\n            motion: Default::default(),\n",
+    "        TextStyle {\n            motion: Default::default(),\n            karaoke: None,\n")
+
 print("Karaoke v2: one title per phrase, custom word highlight shader and editor colour picker")
