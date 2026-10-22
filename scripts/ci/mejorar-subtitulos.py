@@ -379,4 +379,25 @@ replace(MOTION,
     """        let samples = ((duration * 60.0).ceil() as usize).clamp(4, 24);
         for i in 0..=samples {
             let t = i as f64 / samples as f64;""")
+# An explicit "Ninguna" must remain off even after switching modes or
+# reopening the dialog; distinguish its choice from the initial default.
+replace(CAP,
+    "    pub effect: usize,\n    /// 0 fast, 1 balanced, 2 slow.",
+    "    pub effect: usize,\n    effect_customized: bool,\n    /// 0 fast, 1 balanced, 2 slow.")
+replace(CAP,
+    "if self.mode == 2 && self.effect == 0 {",
+    "if self.mode == 2 && self.effect == 0 && !self.effect_customized {")
+replace(CAP,
+    "CaptionsMsg::EffectChanged(index) => self.effect = (index.max(0) as usize).min(4),",
+    """CaptionsMsg::EffectChanged(index) => {
+                self.effect = (index.max(0) as usize).min(4);
+                self.effect_customized = true;
+            },""")
+replace(CAP,
+    "        *self = CaptionsPane {\n            open: true,\n            from_voice,",
+    "        let effect_customized = self.effect_customized;\n        *self = CaptionsPane {\n            open: true,\n            from_voice,")
+replace(CAP,
+    "            mode, length, colour, font, effect, animation_speed,\n",
+    "            mode, length, colour, font, effect, animation_speed, effect_customized,\n")
+
 print("Estudio Joven: phrase segmentation, editable word karaoke, styles, smooth pop applied without CUDA.")
