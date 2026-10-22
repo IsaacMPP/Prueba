@@ -48,6 +48,7 @@ on:
     paths:
       - '.github/workflows/compilar-concat-windows.yml'
       - 'patches/**'
+      - 'scripts/**'
 permissions:
   contents: read
 concurrency:
@@ -170,6 +171,7 @@ jobs:
           set -euo pipefail
           git apply --check .estudio-joven/patches/text-motion.patch
           git apply .estudio-joven/patches/text-motion.patch
+          python .estudio-joven/scripts/ci/integrar-subtitulos.py
           python scripts/locales.py --check
       # The toolchain src/rust-toolchain.toml pins, installed by name, so the
       # runner never also fetches a stable it will not use.
@@ -363,7 +365,11 @@ jobs:
       - name: Probar tiempos y guardado de animaciones
         shell: bash
         working-directory: src
-        run: cargo test --locked -p concat-project --lib text_motion
+        run: |
+          cargo test --locked -p concat-project --lib text_motion
+          cargo test --locked -p concat-speech --lib transcribe
+          cargo test --locked -p concat --lib one_whisper_phrase_splits_before_next_question
+          cargo test --locked -p concat --lib karaoke_respects_per_word_timing
 
       - name: Build
         # An Intel Mac runner is the slow one: its release build ran past
