@@ -22,6 +22,18 @@ def replace(path, before, after):
         raise RuntimeError(f"{path}: anchor expected once; found {count}: {before[:110]!r}")
     file.write_text(body.replace(before, after, 1), encoding="utf-8")
 
+def remove_if_present(path, block):
+    """A visual control may already have been changed by an earlier patch."""
+    file = Path(path)
+    body = file.read_text(encoding="utf-8")
+    matches = body.count(block)
+    if matches > 1:
+        raise RuntimeError(f"{path}: ambiguous block removal: {matches}")
+    if matches == 1:
+        file.write_text(body.replace(block, "", 1), encoding="utf-8")
+    else:
+        print(f"Appearance control already removed or reworked in earlier patch: {block[:70]!r}")
+
 # The two views share a single caption workspace, but never duplicate the
 # existing Text Inspector's appearance controls.
 replace(DIALOG, "export struct CaptionsSheetData {",
@@ -442,7 +454,7 @@ replace(CAP, "            CaptionsMsg::SubtitleSelected(id) => {\n",
 
 # Remove the last appearance controls from the generator. Text clip look,
 # including placement and Motion, belongs to the ORIGINAL inspector.
-replace(DIALOG,
+remove_if_present(DIALOG,
 """            DialogRow {
                 label: I18n.t("captions.placement");
                 SegmentedControl {
@@ -462,7 +474,7 @@ replace(DIALOG,
             }
 
 """, "")
-replace(DIALOG,
+remove_if_present(DIALOG,
 """            if root.data.mode == 2: DialogRow {
                 label: "Animacion";
                 Select {
