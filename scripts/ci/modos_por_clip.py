@@ -160,8 +160,8 @@ replace(FX,
 # Saved default text style is VISUAL only: it must not make unrelated
 # future titles inherit the selected karaoke presentation.
 replace(STUDIO,
-    "        style.karaoke = None;\\n        self.prefs.title_style = Some(style);",
-    "        style.karaoke = None;\\n        style.caption_mode = None;\\n        self.prefs.title_style = Some(style);")
+    "        style.karaoke = None;\n        self.prefs.title_style = Some(style);",
+    "        style.karaoke = None;\n        style.caption_mode = None;\n        self.prefs.title_style = Some(style);")
 
 # Safeguard mode serialization independent of global caption-panel options.
 replace(MODEL,
