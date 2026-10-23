@@ -261,6 +261,8 @@ replace(DIALOG,
     "            if !root.data.running: HorizontalLayout {\n                spacing: 8px;\n\n                Button {",
     "            if !root.data.running && root.view == 1: HorizontalLayout {\n                spacing: 8px;\n\n                Button {")
 # expose new data and callbacks through App's existing dialog bridge.
+replace(APP, 'import { CaptionsDialog, CaptionsSheetData } from "dialogs/captions.slint";',
+    'import { CaptionsDialog, CaptionsSheetData, TranscriptItemData, SubtitleItemData } from "dialogs/captions.slint";')
 replace(APP, "    CaptionsSheetData, SpeechSheetData, VoiceoverData,",
     "    CaptionsSheetData, TranscriptItemData, SubtitleItemData, SpeechSheetData, VoiceoverData,")
 replace(APP, "    callback captions-transcribe();\n",
