@@ -440,4 +440,69 @@ replace(CAP, "            CaptionsMsg::SubtitleSelected(id) => {\n",
             CaptionsMsg::SubtitleSelected(id) => {
 """)
 
+# Remove the last appearance controls from the generator. Text clip look,
+# including placement and Motion, belongs to the ORIGINAL inspector.
+replace(DIALOG,
+"""            DialogRow {
+                label: I18n.t("captions.placement");
+                SegmentedControl {
+                    options: [I18n.t("common.bottom"), I18n.t("captions.centre"), I18n.t("common.top")];
+                    current: root.data.placement;
+                    changed(index) => { root.placement-changed(index); }
+                }
+            }
+
+            DialogRow {
+                label: I18n.t("common.size");
+                SegmentedControl {
+                    options: [I18n.t("common.small"), I18n.t("common.medium"), I18n.t("common.large")];
+                    current: root.data.size;
+                    changed(index) => { root.size-changed(index); }
+                }
+            }
+
+""", "")
+replace(DIALOG,
+"""            if root.data.mode == 2: DialogRow {
+                label: "Animacion";
+                Select {
+                    options: ["Ninguna", "Desvanecer", "Deslizar", "Zoom", "Rebote suave"];
+                    current: root.data.effect;
+                    changed(index) => { root.effect-changed(index); }
+                }
+            }
+
+            if root.data.mode == 2 && root.data.effect != 0: DialogRow {
+                label: "Velocidad";
+                SegmentedControl {
+                    options: ["Rapida", "Suave", "Lenta"];
+                    current: root.data.animation-speed;
+                    changed(index) => { root.animation-speed-changed(index); }
+                }
+            }
+
+""", "")
+# Re-transcription discards corrections: require explicit second click.
+replace(DIALOG,
+    '    property <int> selected-segment: -1;\n',
+    '    property <int> selected-segment: -1;\n    property <bool> confirm-retranscribe: false;\n')
+replace(DIALOG,
+    '                label: root.from-voice ? (root.view == 0 ? "Transcribir voz" : "Crear subtítulos") : I18n.t("captions.addCaptions");',
+    '                label: root.from-voice ? (root.view == 0 ? (root.data.has-transcript ? "Transcripción lista" : "Transcribir voz") : "Crear subtítulos") : I18n.t("captions.addCaptions");')
+replace(DIALOG,
+    '                enabled: root.from-voice ? (root.view == 0 ? root.data.ready && root.data.source >= 0 : root.data.has-transcript) : root.draft != "";',
+    '                enabled: root.from-voice ? (root.view == 0 ? root.data.ready && root.data.source >= 0 && !root.data.has-transcript : root.data.has-transcript) : root.draft != "";')
+replace(DIALOG,
+"""                label: "Volver a transcribir";
+                clicked => { root.transcribe(); }""",
+"""                label: root.confirm-retranscribe ? "Confirmar: reemplazar correcciones" : "Volver a transcribir";
+                clicked => {
+                    if root.confirm-retranscribe {
+                        root.confirm-retranscribe = false;
+                        root.transcribe();
+                    } else {
+                        root.confirm-retranscribe = true;
+                    }
+                }""")
+
 print("Estudio Joven: transcript / captions scroll panes; existing Text Inspector retained.")
