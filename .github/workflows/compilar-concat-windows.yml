@@ -176,6 +176,7 @@ jobs:
           python .estudio-joven/scripts/ci/mejorar-subtitulos.py
           python .estudio-joven/scripts/ci/karaoke_motor.py
           python .estudio-joven/scripts/ci/transcripcion_primero.py
+          python .estudio-joven/scripts/ci/paneles_transcripcion.py
           python scripts/locales.py --check
       # The toolchain src/rust-toolchain.toml pins, installed by name, so the
       # runner never also fetches a stable it will not use.
