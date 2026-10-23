@@ -374,4 +374,70 @@ fn format_caption_clock(seconds: f64) -> String {
 }
 
 /// Imported cues keep the file's timing, including captions shorter than""")
+# Reuse existing multi-clip text controls for entire caption tracks:
+# one selection from the Subtítulos pane, then edit appearance in Text Inspector.
+replace(DIALOG, "    callback subtitle-selected(id: string);\n",
+"""    callback subtitle-selected(id: string);
+    callback subtitle-track-selected();
+""")
+replace(DIALOG,
+    """            Text {
+                text: "Clic: seleccionar el clip en la línea de tiempo y editarlo con el inspector Texto existente.";
+                color: Theme.fg-muted;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+        }""",
+    """            Button {
+                block: true;
+                ghost: true;
+                label: "Seleccionar todos los subtítulos de la pista";
+                clicked => { root.subtitle-track-selected(); }
+            }
+            Text {
+                text: "Usa el inspector Texto existente para cambiar fuente, color, tamaño y otros atributos de toda la selección.";
+                color: Theme.fg-muted;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+        }""")
+replace(APP, "    callback captions-subtitle-selected(id: string);\n",
+"""    callback captions-subtitle-selected(id: string);
+    callback captions-subtitle-track-selected();
+""")
+replace(APP, "            subtitle-selected(id) => { root.captions-subtitle-selected(id); }\n",
+"""            subtitle-selected(id) => { root.captions-subtitle-selected(id); }
+            subtitle-track-selected => { root.captions-subtitle-track-selected(); }
+""")
+replace(LIB,
+    "    app.on_captions_subtitle_selected(on_window!(|state, id: SharedString| {\n",
+"""    app.on_captions_subtitle_track_selected(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::SubtitleTrackSelected));
+    }));
+    app.on_captions_subtitle_selected(on_window!(|state, id: SharedString| {
+""")
+replace(CAP, "    SubtitleSelected(String),\n",
+"""    SubtitleSelected(String),
+    SubtitleTrackSelected,
+""")
+replace(CAP, "            CaptionsMsg::SubtitleSelected(id) => {\n",
+"""            CaptionsMsg::SubtitleTrackSelected => {
+                let track = studio.sole_selection()
+                    .and_then(|id| studio.clip(&id).filter(|c| c.kind == ClipKind::Text)
+                        .map(|clip| clip.track_id.clone()))
+                    .or_else(|| srt::busiest_title_lane(studio.timeline()));
+                if let Some(track) = track {
+                    let ids: Vec<String> = studio.timeline().clips.iter()
+                        .filter(|clip| clip.kind == ClipKind::Text && clip.track_id == track)
+                        .map(|clip| clip.id.clone()).collect();
+                    if !ids.is_empty() {
+                        studio.flush_commit();
+                        studio.selection = ids;
+                        studio.transition_selected = None;
+                    }
+                }
+            }
+            CaptionsMsg::SubtitleSelected(id) => {
+""")
+
 print("Estudio Joven: transcript / captions scroll panes; existing Text Inspector retained.")
