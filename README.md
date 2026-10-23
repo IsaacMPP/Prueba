@@ -1,20 +1,23 @@
-# Estudio Joven — Concat con animaciones de texto
+# Estudio Joven — Reconstrucción con fuente nativa
 
-Base fijada a jub0t/Concat, commit `2756209a92766a4e4726999a51648349a272c159`.
+Editor de video de escritorio Windows basado en [Concat](https://github.com/jub0t/Concat), conservando créditos y licencia AGPL-3.0-or-later.
 
-## Compilar y descargar
-En Actions ejecuta **Concat - Windows**. Al terminar con éxito, descarga **Concat-Estudio-Joven-Animaciones-windows-x86_64**, con instaladores EXE y MSI. El flujo también se ejecuta cuando cambia el parche.
+**Esta rama es de desarrollo y NO es el instalador funcional de subtítulos existente.** Las versiones experimentales siguen disponibles en `feature/paneles-transcripcion-subtitulos` y `feature/modos-subtitulos-por-clip`, sin fusionarlas.
 
-## Animaciones (primera versión experimental)
-Selecciona uno o varios bloques de texto en la línea de tiempo y abre **Texto → Animación de texto**. Elige Entrada y Salida entre Ninguna, Desvanecer, Deslizar, Zoom y Rebote. Ajusta las duraciones (0.05–3 segundos) y la intensidad. Reproduce desde el inicio del bloque para ver el efecto. Los cambios se aplican inmediatamente a todos los textos seleccionados y se pueden deshacer.
+## Arquitectura
 
-En clips cortos, entrada y salida reducen su duración proporcionalmente para evitar superponerse. Los parámetros se guardan con el proyecto; los fotogramas clave originales se conservan. La vista previa y la exportación usan la misma preparación de animación. Para quitar un efecto, selecciona Ninguna en ambas listas. El botón de estilo predeterminado también conserva estas opciones para futuros títulos y subtítulos.
+- Código real versionado en `src/` (snapshot verificable del commit Concat `2756209a92766a4e4726999a51648349a272c159`).
+- Cambios de Estudio Joven futuros realizados directamente en los archivos Rust/Slint, con pruebas y commits revisables.
+- **Sin aplicar parches ni scripts Python de reemplazos durante la compilación.**
+- Se mantiene el inspector Texto original. Transcripción, subtítulos, modo visual y estilos tendrán responsabilidades separadas.
+- Cada fase tendrá pruebas antes de mezclarla con el editor usable.
 
-## Fuente y pruebas
-`patches/text-motion.patch` contiene todas las modificaciones sobre la fuente original. El workflow obtiene el código fijado, aplica el parche y ejecuta pruebas de tiempos, persistencia, composición con fotogramas clave y paridad entre vista previa/exportación antes de empaquetar. Además mantiene las pruebas de arranque y compatibilidad CPU del proyecto original.
+## Fases
 
-La configuración original ya compiló correctamente; esta versión modificada requiere su propia compilación y prueba visual en Windows. El resultado de cada ejecución está en Actions.
+Consulta [Plan de reconstrucción](docs/PLAN_RECONSTRUCCION.md).
 
-No incluye todavía karaoke, sincronización por palabra ni aceleración CUDA. La transcripción conserva el motor CPU original. Los modelos se descargan desde la aplicación.
+La incorporación del fuente original la realiza un workflow **de una sola ejecución** para esta rama, eliminando la dependencia de descargar Concat y reescribir su código en cada build. La compilación de fuente limpia se verificará por separado antes de introducir cambios experimentales.
 
-Concat conserva su nombre, créditos y licencia AGPL-3.0-or-later. Fuente: https://github.com/jub0t/Concat/tree/2756209a92766a4e4726999a51648349a272c159 . Los instaladores incluyen los avisos legales originales. FilmCraft permanece únicamente en el historial.
+## Derechos de autor
+
+Concat y sus componentes conservan su licencia y atribuciones originales dentro de `src/`. Estudio Joven respeta los requisitos de redistribución y publicación de código fuente de AGPL-3.0-or-later.
