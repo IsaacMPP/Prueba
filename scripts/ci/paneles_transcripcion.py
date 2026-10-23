@@ -22,7 +22,7 @@ def replace(path, before, after):
         raise RuntimeError(f"{path}: anchor expected once; found {count}: {before[:110]!r}")
     file.write_text(body.replace(before, after, 1), encoding="utf-8")
 
-def remove_if_present(path, block):
+def remove_if_present(path, block, replacement=""):
     """A visual control may already have been changed by an earlier patch."""
     file = Path(path)
     body = file.read_text(encoding="utf-8")
@@ -30,7 +30,7 @@ def remove_if_present(path, block):
     if matches > 1:
         raise RuntimeError(f"{path}: ambiguous block removal: {matches}")
     if matches == 1:
-        file.write_text(body.replace(block, "", 1), encoding="utf-8")
+        file.write_text(body.replace(block, replacement, 1), encoding="utf-8")
     else:
         print(f"Appearance control already removed or reworked in earlier patch: {block[:70]!r}")
 
