@@ -129,7 +129,7 @@ replace(DIALOG,
                                 overflow: elide;
                             }
                         }
-                        pick := TouchArea {
+                        transcript-pick := TouchArea {
                             mouse-cursor: pointer;
                             clicked => {
                                 root.selected-segment = index;
@@ -230,7 +230,7 @@ replace(DIALOG,
                                 overflow: elide;
                             }
                         }
-                        pick := TouchArea {
+                        subtitle-pick := TouchArea {
                             mouse-cursor: pointer;
                             clicked => { root.subtitle-selected(item.clip-id); }
                         }
