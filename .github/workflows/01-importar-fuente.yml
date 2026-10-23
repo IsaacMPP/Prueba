@@ -29,7 +29,7 @@ jobs:
         id: present
         shell: bash
         run: |
-          if [ -f src/Cargo.toml ]; then
+          if [ -f src/src/Cargo.toml ]; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
           else
             echo "needed=true" >> "$GITHUB_OUTPUT"
@@ -48,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$GITHUB_REF_NAME" = "feature/reconstruccion-fuente-nativa"
-          test -f .concat-original/Cargo.toml
+          test -f .concat-original/src/Cargo.toml
           test -f .concat-original/LICENSE
           test -f .concat-original/src/crates/concat/src/lib.rs
           rm -rf .concat-original/.git
@@ -56,7 +56,7 @@ jobs:
           cp -a .concat-original/. src/
           rm -rf .concat-original
           test -f src/LICENSE
-          test -f src/Cargo.toml
+          test -f src/src/Cargo.toml
           test -f src/src/crates/concat/src/lib.rs
           # No patches or replacement scripts are executed on source code.
           git add -- src
@@ -73,7 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f src/LICENSE
-          test -f src/Cargo.toml
+          test -f src/src/Cargo.toml
           test -f src/src/crates/concat/src/lib.rs
           test ! -e patches/text-motion.patch
           echo "Fuente nativa incorporada; no se ejecutaron scripts de parcheo." >> "$GITHUB_STEP_SUMMARY"
