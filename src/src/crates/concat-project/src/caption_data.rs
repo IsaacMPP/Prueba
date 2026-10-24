@@ -371,6 +371,50 @@ mod tests {
     }
 
     #[test]
+    fn correcting_transcript_and_subtitle_is_one_undo_step_and_round_trips() {
+        use crate::commands::ClipPatch;
+        let mut editor = Editor::new();
+        let original = transcript();
+        let clip_id = editor.apply(Command::Batch { commands: vec![
+            Command::UpsertTranscript { transcript: original.clone() },
+            Command::AddCaptionClip {
+                track_id: Some("T1".into()), above: false, start: 0.2,
+                style: Some(TextStyle { content: "Hola mundo".into(), ..TextStyle::default() }),
+                duration: Some(1.0), offset_y: None,
+                metadata: CaptionMetadata {
+                    transcript_id: Some("tx1".into()),
+                    segment_id: Some("seg1".into()), ..CaptionMetadata::default()
+                },
+            },
+        ] }).unwrap().created_id.expect("subtitle is created");
+        let mut corrected = original.clone();
+        corrected.segments[0].text = "Hola, comunidad".into();
+        let clip = editor.project().active().clip(&clip_id).expect("caption");
+        let mut style = clip.text.clone().unwrap();
+        style.content = "Hola, comunidad".into();
+        editor.apply(Command::Batch { commands: vec![
+            Command::UpsertTranscript { transcript: corrected.clone() },
+            Command::UpdateClip {
+                clip_id: clip_id.clone(),
+                patch: ClipPatch {
+                    text: Some(Some(style)), ..ClipPatch::default()
+                },
+            },
+        ] }).unwrap();
+        let reopened = from_document(&to_document(&settings(), editor.project())).unwrap();
+        assert_eq!(reopened.transcript("tx1").unwrap().segments[0].text,
+            "Hola, comunidad");
+        assert_eq!(reopened.active().clip(&clip_id).unwrap().text.as_ref().unwrap().content,
+            "Hola, comunidad");
+        assert!(editor.undo());
+        assert_eq!(editor.project().transcript("tx1"), Some(original));
+        assert_eq!(editor.project().active().clip(&clip_id).unwrap().text.as_ref().unwrap().content,
+            "Hola mundo");
+        assert!(editor.redo());
+        assert_eq!(editor.project().transcript("tx1"), Some(corrected));
+    }
+
+    #[test]
     fn recognition_and_caption_are_one_undoable_project_operation() {
         let mut editor = Editor::new();
         let tx = transcript();
