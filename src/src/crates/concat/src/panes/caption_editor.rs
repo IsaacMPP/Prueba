@@ -147,8 +147,19 @@ impl CaptionEditor {
     }
 
     fn commit_target(&mut self, studio: &mut Studio, entry: Entry) {
-        if let Target::Caption { clip_id } = &entry.target {
-            studio.focus_caption_clip(clip_id);
+        let clip_id = match &entry.target {
+            Target::Caption { clip_id } => Some(clip_id.clone()),
+            Target::Segment { transcript_id, segment_id } => {
+                studio.timeline().clips.iter().find(|clip| {
+                    clip.caption_metadata().is_some_and(|meta| {
+                        meta.transcript_id.as_deref() == Some(transcript_id.as_str())
+                            && meta.segment_id.as_deref() == Some(segment_id.as_str())
+                    })
+                }).map(|clip| clip.id.clone())
+            }
+        };
+        if let Some(clip_id) = clip_id {
+            studio.focus_caption_clip(&clip_id);
         }
         self.selected = Some(entry.target);
         self.original = entry.content.clone();
