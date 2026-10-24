@@ -1,5 +1,18 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## FASE 3B — IMPLEMENTACIÓN DE CORRECCIONES VISUALES (24 OCT 2026)
+
+**Autorización:** el usuario pidió «procede» después de aprobar dos correcciones aisladas: selección por recuadro visible mientras se arrastra y barra de progreso que corresponda al porcentaje mostrado. Los IDs involucrados son **EJ-012** (resaltado en la línea de tiempo) y **EJ-029** (presentación de progreso de transcripción); el resaltado de las filas del editor **EJ-006** continúa pendiente.
+
+**Código fuente de esta entrega:**
+- `src/src/crates/concat/ui/timeline/lanes.slint`: `Clip.selection-highlighted` recibe una previsualización puramente visual durante el arrastre en el área de la línea de tiempo. El cálculo considera cruce temporal y de pista, clips bloqueados, Shift aditivo y un umbral de 4 px para distinguir clic. Rust sigue haciendo la selección definitiva en `band-selected` al soltar; cancelar descarta la previsualización sin cambiar el proyecto.
+- `src/src/crates/concat/ui/primitives/modal.slint`: se elimina la segunda animación de `width` del relleno de `Progress`. El porcentaje y el ancho proceden directamente de `shown`, que ya se interpola por tiempo. La estimación interna de `Pace` y los reportes parciales de Whisper **no** se convierten por ello en progreso exacto.
+
+**Comprobaciones necesarias:** compilación Rust+Slint y smoke Windows; probar manualmente arrastre normal, Shift aditivo, ratón cancelado, clips de pistas bloqueadas, clic sin arrastrar, barra al transcribir y coherencia geométrica con el porcentaje. No marcar requisitos como completados hasta CI + prueba Windows. **No se incluyó segmentación tipo Premiere ni karaoke en este incremento.** Los 38 pendientes siguen vigentes, inspector Texto original intacto, `main` intacto y PR #9 en borrador.
+
+---
+
+
 ## PRUEBA MANUAL WINDOWS — 24 OCT 2026 (OBSERVACIONES DEL USUARIO)
 
 **El usuario comprobó en Windows** que una transcripción genera subtítulos y que la interfaz Generar/Editar y el inspector Texto original están presentes. Esto es evidencia parcial, **no** completa la prueba manual Fase 3A ni confirma exportación/reapertura/undo o comportamiento del karaoke.

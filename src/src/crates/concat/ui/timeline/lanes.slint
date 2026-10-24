@@ -125,6 +125,9 @@ component Ramps inherits Rectangle {
 
 component Clip inherits Rectangle {
     in property <ClipData> item;
+    // The marquee paints a temporary selection; the project selection
+    // stays untouched until the pointer is released.
+    in property <bool> selection-highlighted: root.item.selected;
     in property <length> px-per-second;
     in property <length> viewport-width: 1920px;
     in property <TimelineTool> tool;
@@ -514,8 +517,8 @@ component Clip inherits Rectangle {
         width: parent.width;
         height: parent.height;
         border-radius: Theme.r-sm;
-        border-width: touch.lifted ? 3px : root.item.selected ? 2px : 1px;
-        border-color: root.item.selected || touch.lifted ? Theme.accent : root.mark;
+        border-width: touch.lifted ? 3px : root.selection-highlighted ? 2px : 1px;
+        border-color: root.selection-highlighted || touch.lifted ? Theme.accent : root.mark;
         // Picked up by a hold: it rises off the lane until it is let go.
         drop-shadow-blur: touch.lifted ? 10px : 0px;
         drop-shadow-offset-y: touch.lifted ? 3px : 0px;
@@ -1220,9 +1223,9 @@ export component Lanes inherits Rectangle {
             root.own-token = root.menu-token;
         }
     }
-    /// A band closed over this box. Committed on release rather than live:
-    /// selecting as the band sweeps looks busy and makes a mistaken sweep hard
-    /// to back out of.
+    /// A band closed over this box. Visual highlighting happens locally
+    /// during the drag; Rust commits the actual selection only on release.
+    /// Cancelling a drag leaves the prior selection intact.
     callback band-selected(from-seconds: float, to-seconds: float,
         from-y: length, to-y: length, additive: bool);
     callback scrolled(seconds: float);
@@ -1520,21 +1523,22 @@ export component Lanes inherits Rectangle {
                     || event.kind == PointerEventKind.cancel) {
                     if (self.drawing) {
                         self.drawing = false;
-                        // A press that never travelled is a click, not a
-                        // band: the playhead goes where it landed, as on
-                        // the ruler. The empty band still clears the
-                        // selection below.
-                        if (event.kind == PointerEventKind.up
-                            && Math.abs(self.to-x - self.from-x) <= 4px
-                            && Math.abs(self.to-y - self.from-y) <= 4px) {
-                            root.scrubbed(Math.max(0, root.seconds-at(self.from-x)));
+                        // Cancel discards only the visual marquee. The
+                        // selection and the playhead stay as they were.
+                        if (event.kind == PointerEventKind.up) {
+                            // A press that never travelled is a click, not a
+                            // band: seek there, then clear the selection.
+                            if (Math.abs(self.to-x - self.from-x) <= 4px
+                                && Math.abs(self.to-y - self.from-y) <= 4px) {
+                                root.scrubbed(Math.max(0, root.seconds-at(self.from-x)));
+                            }
+                            root.band-selected(
+                                root.seconds-at(Math.min(self.from-x, self.to-x)),
+                                root.seconds-at(Math.max(self.from-x, self.to-x)),
+                                root.stack-y(Math.min(self.from-y, self.to-y)),
+                                root.stack-y(Math.max(self.from-y, self.to-y)),
+                                self.additive);
                         }
-                        root.band-selected(
-                            root.seconds-at(Math.min(self.from-x, self.to-x)),
-                            root.seconds-at(Math.max(self.from-x, self.to-x)),
-                            root.stack-y(Math.min(self.from-y, self.to-y)),
-                            root.stack-y(Math.max(self.from-y, self.to-y)),
-                            self.additive);
                     } else if (root.finger && event.kind == PointerEventKind.up
                         && root.finger-up(event.touch-finger-id)) {
                         // A tap on an empty lane: the playhead goes there,
@@ -1577,6 +1581,24 @@ export component Lanes inherits Rectangle {
                 && self.y + self.height > root.ruler-height && self.y < root.height;
 
             item: entry;
+            // Preview selection from the same time/row intersection used
+            // by on_band_selected in Rust. This updates on every pointer
+            // move without changing the project, inspector or undo history.
+            // A stationary press is still a click; Shift keeps old selections.
+            selection-highlighted: !band.drawing
+                || (Math.abs(band.to-x - band.from-x) <= 4px
+                    && Math.abs(band.to-y - band.from-y) <= 4px)
+                ? entry.selected
+                : (band.additive && entry.selected)
+                    || (!root.tracks[entry.row].locked
+                        && entry.start + entry.duration
+                            >= root.seconds-at(Math.min(band.from-x, band.to-x))
+                        && entry.start
+                            <= root.seconds-at(Math.max(band.from-x, band.to-x))
+                        && root.tracks[entry.row].top
+                            <= root.stack-y(Math.max(band.from-y, band.to-y))
+                        && root.tracks[entry.row].top + root.tracks[entry.row].height
+                            >= root.stack-y(Math.min(band.from-y, band.to-y)));
             px-per-second: root.px-per-second;
             viewport-width: parent.width;
             tool: root.tool;

@@ -6,6 +6,8 @@
 
 **Estado de corrección (CI aprobado):** commit [ded75c8](https://github.com/IsaacMPP/Prueba/commit/ded75c8d675788dc3c60ba59337e2f72962afd05) cambia únicamente los ocho campos de `CaptionsSheetData` de `;` a `,`. La única compilación para ese cambio, [Actions #40116367423](https://github.com/IsaacMPP/Prueba/actions/runs/40116367423), finalizó **success**: 171 pruebas Rust / 0 fallidas, Slint+Rust, build Windows x86_64, smoke, Ivy Bridge, escaneo ISA, EXE/MSI y artefacto subido. **Falta prueba manual Windows con video real y cierre funcional de los EJ de Fase 3. PR #9 sigue draft; `main` e inspector Texto original intactos.**
 
+**Fase 3B — cambios fuente en validación:** previsualización de selección por recuadro durante el arrastre en `lanes.slint` y barra con relleno sin animación duplicada en `modal.slint`; aprobados como alcance por el usuario. Pendiente resultado CI y prueba manual Windows. **Sin karaoke ni segmentación Premiere todavía.**
+
 **Prueba manual parcial (24 oct 2026):** con video real en Windows el usuario confirma generación de transcripción/subtítulos y disponibilidad del inspector Texto original. Reportó selección por recuadro que solo se pinta al soltar, porcentaje de transcripción (ej. 51%) que no coincide visualmente con barra, clips con párrafos largos sin reglas configurables de líneas/caracteres/duración, y ausencia de modos karaoke. Diagnóstico técnico, fuentes y criterios en [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md). **No afirmar Fase 3 completa ni karaoke implementado**; falta corregir estos problemas y ejecutar pruebas funcionales adicionales. Los 38 compromisos se conservan.\n\nEstados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |
@@ -21,7 +23,7 @@
 | EJ-009 | Deshacer/rehacer atómico individual y en lote | P0 | Pendiente | F3 | Ctrl+Z revierte solo la operación elegida |
 | EJ-010 | Edición por frase de texto y tiempos | P0 | Texto conectado; tiempos siguen pendientes | F3 | Cambiar sin volver a transcribir |
 | EJ-011 | Separar y unir frases | P0 | Pendiente | F3 | Preservar palabras y relojes |
-| EJ-012 | Ctrl/Shift, selección de toda la pista | P0 | Prototipo previo; selección de recuadro no se resalta durante arrastre en prueba Windows | F3 | Solo subtítulos identificados y resaltado inmediato |
+| EJ-012 | Ctrl/Shift, selección de toda la pista | P0 | F3B en validación: vista previa Slint durante el recuadro, selección real al soltar; prueba Windows pendiente | F3 | Solo subtítulos identificados y resaltado inmediato |
 | EJ-013 | Generador configurable: caracteres/líneas/duración | P1 | Prototipo previo; en fuente nativa los segmentos Whisper se convierten sin dividir a clips, largos en prueba Windows | F3–F4 | Pruebas de segmentación y vista previa |
 | EJ-014 | Importación y exportación SRT | P1 | Exportación filtrada por identificación explícita; CI y prueba manual pendientes | F3–F4 | Round-trip por pista explícita |
 | EJ-015 | Buscar/reemplazar en transcripción | P1 | Pendiente | F3 | Correcciones y deshacer válidos |
@@ -38,7 +40,7 @@
 | EJ-026 | Animaciones estilo CapCut con control de duración | P1 | Prototipo previo | F5 | Preview/export y undo coherentes |
 | EJ-027 | Whisper CUDA NVIDIA con alternativa CPU | P1 | Pendiente | F6 | Benchmark en GPU y PC sin GPU |
 | EJ-028 | Detección automática de modelos Whisper | P1 | Pendiente | F6 | Selección sin buscar rutas |
-| EJ-029 | Transcripción no bloqueante y cancelable | P1 | Ejecución en trabajador y cancelación conservadas; la barra visual difiere del 51% indicado en prueba Windows; analizar animación/progreso | F6 | UI responde mientras procesa |
+| EJ-029 | Transcripción no bloqueante y cancelable | P1 | Ejecución en trabajador y cancelación conservadas; F3B elimina doble animación del ancho de barra, CI/prueba Windows pendientes; progreso estimado sigue siendo estimado | F6 | UI responde mientras procesa |
 | EJ-030 | Fluidez con 500 subtítulos | P1 | Pendiente | F4–F6 | Perfil de RAM y latencia medido |
 | EJ-031 | Diarización de personas que hablan | P2 | Investigación | F7 | Prototipo contrastado con audio real |
 | EJ-032 | Subtítulos multidioma en pistas independientes | P2 | Pendiente | F7 | No sobrescribir subtítulos originales |

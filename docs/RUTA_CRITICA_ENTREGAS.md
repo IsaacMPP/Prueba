@@ -6,6 +6,8 @@
 
 ### Puerta A — Fase 3: estabilizar antes de extender
 
+**Fase 3B aprobada y codificada; pendiente CI/Windows:** previsualización de selección en vivo en Slint sin mutar Rust hasta release; eliminar animación duplicada de barra compartida. Validar clic, selección aditiva Shift, cancelación, pistas bloqueadas y porcentaje/anchura visual. No incluye segmentación ni karaoke. Ver continuidad.
+
 **Estado actualizado 24 oct 2026:** el error de sintaxis Slint del CI #40112515736 quedó corregido en commit `ded75c8`. [Actions #40116367423](https://github.com/IsaacMPP/Prueba/actions/runs/40116367423) aprobó 171 pruebas Rust, Rust+Slint, build/smoke Windows e instaladores. **La puerta funcional sigue abierta:** el usuario probó Windows y detectó selección por recuadro sin resaltado previo al soltar, barra gráfica incongruente con el porcentaje de transcripción y subtítulos demasiado largos sin segmentación. Modos karaoke/configuraciones tipo Premiere aún no están integrados. Ver prueba manual anotada en `docs/CONTINUIDAD_CHATGPT.md`. No iniciar karaoke/Glow/TTS hasta estabilizar y validar en forma incremental.
 
 - Verificar que el PR #9 compile Rust **y Slint**, pase pruebas, arranque y genere instalador. Si falla, arreglar esa misma rama antes de iniciar otra implementación.
