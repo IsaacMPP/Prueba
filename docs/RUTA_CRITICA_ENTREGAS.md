@@ -6,6 +6,8 @@
 
 ### Puerta A — Fase 3: estabilizar antes de extender
 
+**BLOQUEO ACTUAL (CI #40112515736):** 171 pruebas Rust aprobadas pero build Windows falló al compilar `captions.slint` por punto y coma en lugar de coma en campos de `CaptionsSheetData` (líneas 61–68). Objetivo siguiente: verificar la rama actual, corregir sólo esas declaraciones en código fuente, ejecutar un workflow y resolver el siguiente error real si aparece. Véase `docs/CONTINUIDAD_CHATGPT.md`. Hasta pasar esa puerta, no avanzar a fases de karaoke/Glow/TTS.
+
 - Verificar que el PR #9 compile Rust **y Slint**, pase pruebas, arranque y genere instalador. Si falla, arreglar esa misma rama antes de iniciar otra implementación.
 - Probar manualmente en Windows: Whisper con voz en español; Generar / Editar; selección de frase; Aplicar, Descartar, Seguir editando; cambio de pestaña con borrador; Ctrl+Z/Ctrl+Y; guardar, cerrar y volver a abrir; exportar SRT.
 - Completar la interfaz de filas visibles y selección de clip bidireccional. Después dividir/unir frases y edición de tiempos de segmento, preservando IDs y referencias. Entregar incrementos pequeños con pruebas independientes.
