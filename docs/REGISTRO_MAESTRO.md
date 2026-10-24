@@ -7,9 +7,9 @@ Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = ex
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |
 |---|---|---|---|---|---|
 | EJ-001 | Rust/Slint versionado, sin scripts de parcheo | P0 | En validación | F1 | CI nativo y smoke Windows exitosos |
-| EJ-002 | Transcripción persistente con IDs estables | P0 | Modelo Rust implementado; CI pendiente; sin conexión a Whisper | F2 | Guardar/cerrar/abrir conserva texto y tiempos |
-| EJ-003 | Identificar subtítulos, separados de títulos/créditos | P0 | Metadatos Rust implementados; UI y SRT pendientes | F2 | Lotes/SRT excluyen títulos normales |
-| EJ-004 | Modo independiente por subtítulo | P0 | Modelo Rust implementado; render karaoke/UI pendientes | F2–F4 | A/B/A y reapertura sin cambios cruzados |
+| EJ-002 | Transcripción persistente con IDs estables | P0 | Whisper conectado a comandos nativos; CI y prueba real pendientes | F2 | Guardar/cerrar/abrir conserva texto y tiempos |
+| EJ-003 | Identificar subtítulos, separados de títulos/créditos | P0 | Generador, importación y SRT conectados; CI y prueba real pendientes | F2 | Lotes/SRT excluyen títulos normales |
+| EJ-004 | Modo independiente por subtítulo | P0 | Modelo y duplicación del clip conectados; render karaoke/UI pendientes | F2–F4 | A/B/A y reapertura sin cambios cruzados |
 | EJ-005 | Palabras temporizadas y estado de alineación | P0 | Tiempos tipados en modelo; edición y alineación pendientes | F2–F4 | Tiempos guardados, revisables y corregibles |
 | EJ-006 | Resaltado de fila seleccionada | P0 | Pendiente | F3 | Selección visible en ambas listas |
 | EJ-007 | Sincronía panel ↔ línea de tiempo | P0 | Prototipo previo | F3 | Selección bidireccional con el clip exacto |
@@ -19,7 +19,7 @@ Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = ex
 | EJ-011 | Separar y unir frases | P0 | Pendiente | F3 | Preservar palabras y relojes |
 | EJ-012 | Ctrl/Shift, selección de toda la pista | P0 | Prototipo previo | F3 | Solo subtítulos identificados |
 | EJ-013 | Generador configurable: caracteres/líneas/duración | P1 | Prototipo previo | F3–F4 | Pruebas de segmentación y vista previa |
-| EJ-014 | Importación y exportación SRT | P1 | Conservado | F3–F4 | Round-trip por pista explícita |
+| EJ-014 | Importación y exportación SRT | P1 | Exportación filtrada por identificación explícita; CI y prueba manual pendientes | F3–F4 | Round-trip por pista explícita |
 | EJ-015 | Buscar/reemplazar en transcripción | P1 | Pendiente | F3 | Correcciones y deshacer válidos |
 | EJ-016 | Karaoke progresivo resaltando palabra activa | P1 | Prototipo previo | F4 | Video real y exportación consistentes |
 | EJ-017 | Karaoke por palabra centrada, sin 1 clip por palabra | P1 | Prototipo previo | F4 | Posición correcta sin saltos |
