@@ -8,6 +8,8 @@
 - `src/src/crates/concat/ui/timeline/lanes.slint`: `Clip.selection-highlighted` recibe una previsualización puramente visual durante el arrastre en el área de la línea de tiempo. El cálculo considera cruce temporal y de pista, clips bloqueados, Shift aditivo y un umbral de 4 px para distinguir clic. Rust sigue haciendo la selección definitiva en `band-selected` al soltar; cancelar descarta la previsualización sin cambiar el proyecto.
 - `src/src/crates/concat/ui/primitives/modal.slint`: se elimina la segunda animación de `width` del relleno de `Progress`. El porcentaje y el ancho proceden directamente de `shown`, que ya se interpola por tiempo. La estimación interna de `Pace` y los reportes parciales de Whisper **no** se convierten por ello en progreso exacto.
 
+**Validación automática iniciada:** [Actions #40123969756](https://github.com/IsaacMPP/Prueba/actions/runs/40123969756) (workflow Windows, SHA de fuente `2acd74f9487aa77b788c675773f1256b397ed056`), **in_progress** al registrar. Solo se lanzó la ejecución automática generada por el commit de código; no ejecutar una segunda validación ni afirmar éxito antes de consultar el estado final. Este commit adicional de documentación no altera `src/**` y no debería iniciar otro workflow.
+
 **Comprobaciones necesarias:** compilación Rust+Slint y smoke Windows; probar manualmente arrastre normal, Shift aditivo, ratón cancelado, clips de pistas bloqueadas, clic sin arrastrar, barra al transcribir y coherencia geométrica con el porcentaje. No marcar requisitos como completados hasta CI + prueba Windows. **No se incluyó segmentación tipo Premiere ni karaoke en este incremento.** Los 38 pendientes siguen vigentes, inspector Texto original intacto, `main` intacto y PR #9 en borrador.
 
 ---
