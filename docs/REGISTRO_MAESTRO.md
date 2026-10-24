@@ -1,10 +1,10 @@
 # Estudio Joven — Registro maestro de 38 compromisos
 
-**Actualizado:** 24 de octubre de 2026 (Fase 3A: corrección Slint aplicada; CI nueva en curso). **Fuente de verdad para las siguientes fases.**
+**Actualizado:** 24 de octubre de 2026 (Fase 3A: corrección Slint y CI Windows aprobados; validación manual pendiente). **Fuente de verdad para las siguientes fases.**
 
 **Error histórico confirmado:** [GitHub Actions #40112515736](https://github.com/IsaacMPP/Prueba/actions/runs/40112515736) terminó en **failure**. Pasaron 171 pruebas Rust, pero el compilador Slint rechazó ocho declaraciones separadas con `;` en `src/src/crates/concat/ui/dialogs/captions.slint`, líneas 61–68: `CaptionsSheetData` necesita `,` como separador de campos. **Primero corregir ese error de sintaxis; luego compilar y revisar nuevos errores si aparecen.** No hay build F3 aprobado ni prueba manual, no fusionar PR #9. Leer [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md).
 
-**Estado de corrección (sin validar aún):** commit [ded75c8](https://github.com/IsaacMPP/Prueba/commit/ded75c8d675788dc3c60ba59337e2f72962afd05) cambia únicamente los ocho campos de `CaptionsSheetData` de `;` a `,`. Nueva y única ejecución para ese cambio: [Actions #40116367423](https://github.com/IsaacMPP/Prueba/actions/runs/40116367423), **in_progress** al registrarla. No hay éxito Slint/Windows confirmado; revisar resultado y cualquier nuevo error antes de continuar. **PR #9 permanece en borrador; `main` e inspector Texto original intactos.**
+**Estado de corrección (CI aprobado):** commit [ded75c8](https://github.com/IsaacMPP/Prueba/commit/ded75c8d675788dc3c60ba59337e2f72962afd05) cambia únicamente los ocho campos de `CaptionsSheetData` de `;` a `,`. La única compilación para ese cambio, [Actions #40116367423](https://github.com/IsaacMPP/Prueba/actions/runs/40116367423), finalizó **success**: 171 pruebas Rust / 0 fallidas, Slint+Rust, build Windows x86_64, smoke, Ivy Bridge, escaneo ISA, EXE/MSI y artefacto subido. **Falta prueba manual Windows con video real y cierre funcional de los EJ de Fase 3. PR #9 sigue draft; `main` e inspector Texto original intactos.**
 
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
@@ -17,7 +17,7 @@ Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = ex
 | EJ-005 | Palabras temporizadas y estado de alineación | P0 | Tiempos tipados en modelo; edición y alineación pendientes | F2–F4 | Tiempos guardados, revisables y corregibles |
 | EJ-006 | Resaltado de fila seleccionada | P0 | Selector de frase activo; lista simultánea pendiente y CI sin validar | F3 | Selección visible en ambas listas |
 | EJ-007 | Sincronía panel ↔ línea de tiempo | P0 | Panel selecciona clip real; sincronización inversa pendiente | F3 | Selección bidireccional con el clip exacto |
-| EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | F3A: sintaxis Slint corregida en ded75c8; nueva CI #40116367423 en curso; lógica aún sin validar visualmente | F3 | No perder borradores al navegar |
+| EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | F3A: sintaxis Slint corregida en ded75c8; CI Windows #40116367423 aprobada; lógica aún sin validar manual/visualmente | F3 | No perder borradores al navegar |
 | EJ-009 | Deshacer/rehacer atómico individual y en lote | P0 | Pendiente | F3 | Ctrl+Z revierte solo la operación elegida |
 | EJ-010 | Edición por frase de texto y tiempos | P0 | Texto conectado; tiempos siguen pendientes | F3 | Cambiar sin volver a transcribir |
 | EJ-011 | Separar y unir frases | P0 | Pendiente | F3 | Preservar palabras y relojes |
