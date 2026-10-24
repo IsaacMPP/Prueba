@@ -389,6 +389,21 @@ pub enum Command {
         #[serde(default)]
         offset_y: Option<f64>,
     },
+    /// Creates an actual subtitle as a text clip in one undoable edit,
+    /// using the original TextStyle rendering and explicit caption metadata.
+    /// An ordinary AddTextClip remains an ordinary title, never a caption.
+    AddCaptionClip {
+        track_id: Option<String>,
+        #[serde(default)]
+        above: bool,
+        start: f64,
+        style: Option<TextStyle>,
+        #[serde(default)]
+        duration: Option<f64>,
+        #[serde(default)]
+        offset_y: Option<f64>,
+        metadata: CaptionMetadata,
+    },
     /// Places a shape: a clip with no media behind it that draws one
     /// figure over the picture, minting a "c" id. Lands the way a title
     /// does - above the picture - since a shape is drawn over it.
@@ -1057,6 +1072,13 @@ impl Command {
                 offset_y,
                 style,
                 ..
+            }
+            | Command::AddCaptionClip {
+                start,
+                duration,
+                offset_y,
+                style,
+                ..
             } => {
                 bad([*start])
                     || bad(*duration)
@@ -1232,6 +1254,7 @@ pub fn apply(
         | Command::AddClipAtFirstFree { .. }
         | Command::AddClipsInSequence { .. }
         | Command::AddTextClip { .. }
+        | Command::AddCaptionClip { .. }
         | Command::AddShapeClip { .. }
         | Command::AddLayerClip { .. }
         | Command::MoveClips { .. }
