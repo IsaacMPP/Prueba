@@ -2087,6 +2087,27 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
     app.on_captions_export_srt(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::ExportSrt));
     }));
+    app.on_captions_editor_tab_changed(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorTab(index)));
+    }));
+    app.on_captions_editor_kind_changed(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorKind(index)));
+    }));
+    app.on_captions_editor_selected(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorSelect(index)));
+    }));
+    app.on_captions_editor_text_edited(on_window!(|state, text: SharedString| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorText(text.to_string())));
+    }));
+    app.on_captions_editor_apply(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorApply));
+    }));
+    app.on_captions_editor_discard(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorDiscard));
+    }));
+    app.on_captions_editor_stay(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorStay));
+    }));
     app.on_speech_closed(on_window!(|state| {
         state.handle(Msg::Speech(SpeechMsg::Close));
     }));
