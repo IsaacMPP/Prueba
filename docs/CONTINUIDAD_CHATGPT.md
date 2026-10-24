@@ -1,6 +1,22 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
-## ACTUALIZACIÓN MÁS RECIENTE — FASE 3A COMPILA Y CI WINDOWS APROBADO (24 OCT 2026)
+## PRUEBA MANUAL WINDOWS — 24 OCT 2026 (OBSERVACIONES DEL USUARIO)
+
+**El usuario comprobó en Windows** que una transcripción genera subtítulos y que la interfaz Generar/Editar y el inspector Texto original están presentes. Esto es evidencia parcial, **no** completa la prueba manual Fase 3A ni confirma exportación/reapertura/undo o comportamiento del karaoke.
+
+**Hallazgos nuevos con capturas:**
+
+1. **Selección de clips por recuadro NO se resalta durante el arrastre** (se aplica al soltar). Confirmado en fuente: `src/src/crates/concat/ui/timeline/lanes.slint`, callback `band-selected` y `band := TouchArea` (confirmación al soltar), más `src/src/crates/concat/src/lib.rs` al manejar `on_band_selected`. **Comportamiento deseado:** previsualización visual continua durante el arrastre, con selección definitiva al soltar, Shift aditivo, clips bloqueados excluidos y cancelación reversible. No confundir con selección de una fila del editor. Relación EJ-012/EJ-006.
+2. **La barra de transcripción luce mucho más corta que el 51% indicado** en la captura. Fuente observada: `ui/dialogs/captions.slint` dibuja texto desde `bar.shown`; `ui/primitives/modal.slint` calcula ancho desde ese valor y además anima `width` 280 ms, mientras el valor cambia por `animation-tick()`. **Hipótesis a verificar:** animación de ancho que se retrasa/reinicia frente al valor mostrado; no afirmar causalidad hasta probar. Diferenciar porcentaje medido vs estimado por `panes/pace.rs`. Relación EJ-029 (UX de progreso).
+3. **Subtítulos demasiado extensos.** Confirmado: `src/src/crates/concat/src/panes/captions.rs` genera un clip directamente por cada segmento Whisper, sin limitar caracteres/líneas/duración; `TranscriptSegment.words` se guarda vacío. Hace falta segmentar sin inventar marcas exactas por palabra. Relación EJ-013/EJ-020/EJ-010/EJ-011.
+4. **Configuración deseada semejante a Premiere:** longitud máxima en caracteres (ejemplo visto: 42), disposición una o dos líneas o palabra, duración mínima y máxima, separación entre subtítulos, segmentación por pausas/frases, edición de inicios/finales, vista previa, opciones conservadas por proyecto. Los valores son ejemplos de referencia, no defaults aprobados. «Frases» es una regla de segmentación, NO un modo de karaoke.
+5. **Modos Normal, Karaoke progresivo y Karaoke por palabra** deben ser seleccionables por clip, con tiempos revisables y persistencia, respetando el inspector Texto original. El modelo guarda metadatos preliminares; **render y alineación por palabra siguen pendientes** (EJ-004/EJ-005/EJ-016–EJ-019).
+
+**Secuencia propuesta (no implementada aún):** primero previsualización de selección y concordancia visual de progreso (dos correcciones aisladas); segundo motor de segmentación configurable con pruebas de duración/identidad, luego UI de presets en la herramienta original; tercero completar edición por filas y tiempos; cuarto karaoke una vez asegurada alineación por palabra y paridad entre vista previa/exportación. No cambiar `main` ni fusionar PR #9; conservar 38 compromisos. Para funciones nuevas seguir análisis/diseño/autorización antes de escribir código.
+
+---
+
+## ACTUALIZACIÓN HISTÓRICA — FASE 3A COMPILA Y CI WINDOWS APROBADO (24 OCT 2026)
 
 - **Rama:** `feature/fase3-editor-transcripcion-subtitulos`. **Código corregido:** [commit `ded75c8`](https://github.com/IsaacMPP/Prueba/commit/ded75c8d675788dc3c60ba59337e2f72962afd05). Se editaron **solo ocho separadores** `;` → `,` en las líneas 61–68 de `src/src/crates/concat/ui/dialogs/captions.slint`, dentro de `CaptionsSheetData`.
 - **Compilación de validación, única para esta corrección:** [GitHub Actions #40116367423](https://github.com/IsaacMPP/Prueba/actions/runs/40116367423), estado **completed / success**. Se comprobaron **171 pruebas Rust aprobadas, 0 fallidas**, compilación Rust+Slint, build Windows x86_64, smoke Windows, emulación Ivy Bridge, análisis de instrucciones, generación de instaladores y subida del artefacto.
