@@ -217,7 +217,18 @@ impl CaptionsPane {
                         // Keep recognition and generated clips together as one
                         // native undo step. Whisper currently returns phrases,
                         // not word clocks: never fabricate precise word timing.
-                        let transcript_id = format!("ejtx:{}:{}", subject.timeline_id, subject.clip_id);
+                        // A fresh recognition is a new version, not a
+                        // destructive replacement of an earlier corrected
+                        // transcript or the references on its older captions.
+                        let stem = format!("ejtx:{}:{}", subject.timeline_id, subject.clip_id);
+                        let mut version = 1usize;
+                        let transcript_id = loop {
+                            let candidate = format!("{stem}:{version}");
+                            if studio.project().transcript(&candidate).is_none() {
+                                break candidate;
+                            }
+                            version += 1;
+                        };
                         let mut saved_segments = Vec::new();
                         let mut commands = Vec::new();
                         for (index, segment) in segments.into_iter().enumerate() {
