@@ -23,7 +23,6 @@
   "captions.noVoiceOnTimeline": "音声のあるクリップがタイムラインにありません",
   "captions.nothingSaidClip": "そのクリップには発話がありませんでした",
   "captions.nothingToCaptionYet": "まだ字幕を付けるものがありません",
-  "captions.oneTitlePerPhrase": "発話されたフレーズごとにタイトルを一つ、言葉のタイミングどおりに、空いている最初のレーンへ。",
   "captions.oneTitlePerSentence": "一文ごとにタイトルを一つ、読み終えるのに必要な時間だけ表示し、空いている最初のレーンに順番に並べます。",
   "captions.placement": "配置",
   "captions.readingTheSound": "クリップの音声を読み込み中",
