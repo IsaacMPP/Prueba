@@ -11,11 +11,11 @@ Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = ex
 | EJ-003 | Identificar subtítulos, separados de títulos/créditos | P0 | Generador, importación y SRT conectados; CI y prueba real pendientes | F2 | Lotes/SRT excluyen títulos normales |
 | EJ-004 | Modo independiente por subtítulo | P0 | Modelo y duplicación del clip conectados; render karaoke/UI pendientes | F2–F4 | A/B/A y reapertura sin cambios cruzados |
 | EJ-005 | Palabras temporizadas y estado de alineación | P0 | Tiempos tipados en modelo; edición y alineación pendientes | F2–F4 | Tiempos guardados, revisables y corregibles |
-| EJ-006 | Resaltado de fila seleccionada | P0 | Pendiente | F3 | Selección visible en ambas listas |
-| EJ-007 | Sincronía panel ↔ línea de tiempo | P0 | Prototipo previo | F3 | Selección bidireccional con el clip exacto |
-| EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | Pendiente | F3 | No perder borradores al navegar |
+| EJ-006 | Resaltado de fila seleccionada | P0 | Selector de frase activo; lista simultánea pendiente y CI sin validar | F3 | Selección visible en ambas listas |
+| EJ-007 | Sincronía panel ↔ línea de tiempo | P0 | Panel selecciona clip real; sincronización inversa pendiente | F3 | Selección bidireccional con el clip exacto |
+| EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | Código Rust+Slint integrado; prueba funcional pendiente | F3 | No perder borradores al navegar |
 | EJ-009 | Deshacer/rehacer atómico individual y en lote | P0 | Pendiente | F3 | Ctrl+Z revierte solo la operación elegida |
-| EJ-010 | Edición por frase de texto y tiempos | P0 | Prototipo previo | F3 | Cambiar sin volver a transcribir |
+| EJ-010 | Edición por frase de texto y tiempos | P0 | Texto conectado; tiempos siguen pendientes | F3 | Cambiar sin volver a transcribir |
 | EJ-011 | Separar y unir frases | P0 | Pendiente | F3 | Preservar palabras y relojes |
 | EJ-012 | Ctrl/Shift, selección de toda la pista | P0 | Prototipo previo | F3 | Solo subtítulos identificados |
 | EJ-013 | Generador configurable: caracteres/líneas/duración | P1 | Prototipo previo | F3–F4 | Pruebas de segmentación y vista previa |
