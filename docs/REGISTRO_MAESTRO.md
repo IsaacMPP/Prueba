@@ -16,6 +16,8 @@
 
 **Identidad del producto y prioridades (24 oct 2026):** nombre público final del editor = **JA Video Studio**. El identificador técnico histórico `Estudio Joven` se conserva mientras se estabiliza Windows; **no ejecutar renombrado de código, instaladores ni proyectos todavía**. **JA Connect** será el sistema futuro de procesamiento remoto privado PC ↔ móvil, **diferido hasta que el editor Windows sea estable y el usuario autorice trabajar en móvil**. Visión a largo plazo: una **Suite**, sin productos adicionales definidos ni desarrollos paralelos. Ningún nombre cambia los **38 compromisos EJ-001 a EJ-038**. No tocar `main`, inspector Texto original ni fusionar PR #9 sin autorización.
 
+**F3C: reparación de CI autorizada (24 oct 2026):** compilación #40134001688 bloqueada en catálogo de idiomas, antes de Rust/Slint (`gone: captions.oneTitlePerPhrase`). Se corrigieron las referencias del panel F3C a `I18n.t`, retiró la clave obsoleta de los 25 idiomas y añadió etiquetas inglés/español. **Pendiente nuevo CI Windows y prueba manual; no incluir funciones nuevas.**
+
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |

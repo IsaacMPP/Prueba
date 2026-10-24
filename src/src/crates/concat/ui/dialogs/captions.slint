@@ -410,42 +410,42 @@ export component CaptionsDialog inherits Modal {
         }
 
         if !root.data.running && root.data.editor-tab == 0 && root.from-voice: DialogSection {
-            title: "Segmentación de subtítulos";
+            title: I18n.t("captions.segmentationTitle");
             collapsible: true;
 
             DialogRow {
-                label: "Distribución";
+                label: I18n.t("captions.segmentationLayout");
                 SegmentedControl {
-                    options: ["1 línea", "2 líneas", "1 palabra"];
+                    options: [I18n.t("captions.oneLine"), I18n.t("captions.twoLines"), I18n.t("captions.oneWord")];
                     current: root.data.rules-layout;
                     changed(index) => { root.rules-layout(index); }
                 }
             }
             DialogRow {
-                label: "Caracteres por línea";
+                label: I18n.t("captions.charactersPerLine");
                 NumberField {
                     value: root.data.rules-chars;
                     minimum: 12;
                     maximum: 80;
                     precision: 0;
-                    unit: "car.";
+                    unit: I18n.t("captions.charactersUnit");
                     changed(value) => { root.rules-chars(value); }
                 }
             }
             DialogRow {
-                label: "Máximo de palabras";
+                label: I18n.t("captions.maxWords");
                 NumberField {
                     value: root.data.rules-words;
                     minimum: 1;
                     maximum: 40;
                     precision: 0;
-                    unit: "pal.";
+                    unit: I18n.t("captions.wordsUnit");
                     enabled: root.data.rules-layout != 2;
                     changed(value) => { root.rules-words(value); }
                 }
             }
             DialogRow {
-                label: "Duración mínima";
+                label: I18n.t("captions.minDuration");
                 NumberField {
                     value: root.data.rules-min-seconds;
                     minimum: 0.1;
@@ -457,7 +457,7 @@ export component CaptionsDialog inherits Modal {
                 }
             }
             DialogRow {
-                label: "Duración máxima";
+                label: I18n.t("captions.maxDuration");
                 NumberField {
                     value: root.data.rules-max-seconds;
                     minimum: root.data.rules-min-seconds;
@@ -469,18 +469,18 @@ export component CaptionsDialog inherits Modal {
                 }
             }
             DialogRow {
-                label: "Separación";
+                label: I18n.t("captions.gapFrames");
                 NumberField {
                     value: root.data.rules-gap-frames;
                     minimum: 0;
                     maximum: 12;
                     precision: 0;
-                    unit: "fot.";
+                    unit: I18n.t("captions.framesUnit");
                     changed(value) => { root.rules-gap-frames(value); }
                 }
             }
             Text {
-                text: "Los cortes dentro de cada frase tienen tiempos estimados. El karaoke requerirá alineación por palabra. La duración mínima es orientativa: no ampliamos textos fuera del audio reconocido.";
+                text: I18n.t("captions.estimatedTimingHint");
                 color: Theme.fg-dim;
                 font-size: Theme.fs-sm;
                 wrap: word-wrap;

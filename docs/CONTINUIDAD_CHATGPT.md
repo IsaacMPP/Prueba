@@ -1,5 +1,16 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## CORRECCIÓN AUTORIZADA DE FASE 3C — VALIDAR CI (24 OCT 2026)
+
+El usuario autorizó expresamente **solo** reparar el fallo de compilación, idiomas y errores posteriores que revele CI, sin añadir funciones nuevas. La ejecución [#40134001688](https://github.com/IsaacMPP/Prueba/actions/runs/40134001688) falló ANTES de compilar Rust/Slint, en `python scripts/locales.py --check`: `gone: captions.oneTitlePerPhrase`. Las etiquetas nuevas de la segmentación estaban fijadas en español.
+
+**Corrección acotada:** convertir etiquetas de F3C a `I18n.t`, añadir claves en catálogos inglés/español y retirar `captions.oneTitlePerPhrase` de todos los idiomas existentes. NO tocar el motor de reconocimiento, lógica de segmentación, algoritmos de renderizado, karaoke, inspector Texto, `main`, ni código Android/JA Connect. El validador admite traducciones faltantes en idiomas adicionales y utiliza inglés de respaldo.
+
+**Siguiente tarea:** verificar nuevo CI Rust+Slint, Windows smoke y artefacto; reparar en la misma rama cualquier error de compilación demostrado, dentro del alcance autorizado. No declarar aprobado hasta obtener resultado real. PR #9 sigue draft y 38 EJ inalterados.
+
+---
+
+
 ## IDENTIDAD DEFINITIVA Y ALCANCE — JA VIDEO STUDIO (24 OCT 2026)
 
 **Decisión explícita del usuario:** el nombre **final y público del editor de video** será **JA Video Studio**. El nombre técnico/de trabajo histórico `Estudio Joven` y las rutas, paquetes, ramas y documentos existentes pueden mantenerse **temporalmente** para evitar cambios disruptivos durante la estabilización. **No renombrar todavía el código fuente, paquetes, identificadores, instaladores o rutas de datos sin planificación y autorización explícita**, con migración de proyectos, compatibilidad y pruebas.
