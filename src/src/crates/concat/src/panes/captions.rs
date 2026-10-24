@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use concat_project::Command;
-use concat_project::caption_data::{CaptionMetadata, TranscriptDocument, TranscriptSegment};
+use concat_project::caption_data::{caption_cues, CaptionMetadata, TranscriptDocument, TranscriptSegment};
 use concat_project::model::{ClipKind, TextStyle};
 use concat_project::srt;
 use concat_speech::JobStage;
@@ -671,28 +671,6 @@ fn export_lane(studio: &Studio) -> Option<ExportLane> {
     Some(ExportLane { track_id, busiest: true })
 }
 
-/// Build SRT cues from actual subtitles, never from arbitrary text clips.
-/// Legacy title-only projects require explicit classification, not guessing.
-fn caption_cues(
-    timeline: &concat_project::model::Timeline,
-    track_id: Option<&str>,
-) -> Vec<srt::Cue> {
-    let mut cues: Vec<srt::Cue> = timeline.clips.iter()
-        .filter(|clip| clip.caption_metadata().is_some()
-            && track_id.is_none_or(|id| clip.track_id == id))
-        .filter_map(|clip| {
-            let text = clip.text.as_ref()?.content.trim();
-            (!text.is_empty()).then(|| srt::Cue {
-                start: clip.start,
-                end: clip.start + clip.duration,
-                text: text.to_owned(),
-            })
-        })
-        .collect();
-    cues.sort_by(|a, b| a.start.total_cmp(&b.start));
-    cues
-}
-
 /// The name an export is offered under: the project's, as one file name,
 /// or "captions" with no project or no usable name.
 fn file_stem(studio: &Studio) -> String {
@@ -936,26 +914,6 @@ fn wrap_caption(sentence: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{script_captions, source_label};
-
-    #[test]
-    fn srt_export_excludes_ordinary_titles_even_on_the_caption_lane() {
-        use concat_project::model::TextStyle;
-        let mut editor = concat_project::Editor::new();
-        let captions = super::srt_commands(vec![concat_project::srt::Cue {
-            start: 0.5, end: 1.5, text: "Subtítulo".into(),
-        }], (0.35, 0.04), None);
-        editor.apply(concat_project::Command::Batch { commands: captions }).unwrap();
-        let caption_track = editor.project().active().clips[0].track_id.clone();
-        editor.apply(concat_project::Command::AddTextClip {
-            track_id: Some(caption_track.clone()), above: false, start: 3.0,
-            style: Some(TextStyle { content: "Créditos".into(), ..TextStyle::default() }),
-            duration: Some(2.0), offset_y: None,
-        }).unwrap();
-        let cues = super::caption_cues(editor.project().active(), Some(&caption_track));
-        assert_eq!(cues.len(), 1);
-        assert_eq!(cues[0].text, "Subtítulo");
-        assert_eq!(editor.project().caption_clip_ids("TL1").len(), 1);
-    }
 
     #[test]
     fn imported_srt_preserves_short_cues_and_multiline_text() {
