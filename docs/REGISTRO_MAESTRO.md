@@ -1,6 +1,8 @@
 # Estudio Joven — Registro maestro de 38 compromisos
 
-**Actualizado:** 24 de octubre de 2026 (Fase 3A, edición nativa, aún sin validar CI de esta rama). **Fuente de verdad para las siguientes fases.**
+**Actualizado:** 24 de octubre de 2026 (Fase 3A, error real confirmado en CI #40112515736). **Fuente de verdad para las siguientes fases.**
+
+**Bloqueo prioritario confirmado:** [GitHub Actions #40112515736](https://github.com/IsaacMPP/Prueba/actions/runs/40112515736) terminó en **failure**. Pasaron 171 pruebas Rust, pero el compilador Slint rechazó ocho declaraciones separadas con `;` en `src/src/crates/concat/ui/dialogs/captions.slint`, líneas 61–68: `CaptionsSheetData` necesita `,` como separador de campos. **Primero corregir ese error de sintaxis; luego compilar y revisar nuevos errores si aparecen.** No hay build F3 aprobado ni prueba manual, no fusionar PR #9. Leer [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md).
 
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
@@ -13,7 +15,7 @@ Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = ex
 | EJ-005 | Palabras temporizadas y estado de alineación | P0 | Tiempos tipados en modelo; edición y alineación pendientes | F2–F4 | Tiempos guardados, revisables y corregibles |
 | EJ-006 | Resaltado de fila seleccionada | P0 | Selector de frase activo; lista simultánea pendiente y CI sin validar | F3 | Selección visible en ambas listas |
 | EJ-007 | Sincronía panel ↔ línea de tiempo | P0 | Panel selecciona clip real; sincronización inversa pendiente | F3 | Selección bidireccional con el clip exacto |
-| EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | Verificación posterior del guardado y refresco tras Deshacer implementados; CI/prueba Windows pendientes | F3 | No perder borradores al navegar |
+| EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | F3A bloqueada por sintaxis Slint: CI #40112515736 falló en captions.slint L61-L68; lógica aún sin validar visualmente | F3 | No perder borradores al navegar |
 | EJ-009 | Deshacer/rehacer atómico individual y en lote | P0 | Pendiente | F3 | Ctrl+Z revierte solo la operación elegida |
 | EJ-010 | Edición por frase de texto y tiempos | P0 | Texto conectado; tiempos siguen pendientes | F3 | Cambiar sin volver a transcribir |
 | EJ-011 | Separar y unir frases | P0 | Pendiente | F3 | Preservar palabras y relojes |
