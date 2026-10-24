@@ -12,6 +12,8 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
+use crate::caption_data::{CaptionMetadata, TranscriptDocument};
+
 use crate::model::{
     AppliedFilter, AudioTrack, Background, Clip, ClipKind, ClipMask, ColorRange, ColorSpace, Crop,
     CustomFont, Cutout, CutoutMode, Enhanced, Framing, KeyEase, KeyProperty, MediaItem, MediaKind,
@@ -20,6 +22,7 @@ use crate::model::{
 };
 
 mod audio;
+mod subtitles;
 mod clips;
 pub use clips::{PlayheadSide, consolidation_clips, delete_to_playhead, why_not_merge};
 mod media;
@@ -261,6 +264,19 @@ pub struct NewMedia {
 // the patch would cost every caller for a saving nobody would measure.
 #[allow(clippy::large_enum_variant)]
 pub enum Command {
+    /// Insert or replace one persistent transcription, undoably.
+    UpsertTranscript {
+        transcript: TranscriptDocument,
+    },
+    /// Remove a transcription by stable id; does not delete generated clips.
+    RemoveTranscript {
+        transcript_id: String,
+    },
+    /// Identify or un-identify one text clip as a subtitle, preserving typography.
+    SetCaptionMetadata {
+        clip_id: String,
+        metadata: Option<CaptionMetadata>,
+    },
     /// Imports a file into the bin, minting an "m" id. A path already
     /// present is a tolerated no-op that mints nothing.
     AddMedia {
@@ -863,6 +879,12 @@ pub struct Outcome {
 /// those sentences names a host can match on.
 #[derive(Clone, PartialEq, Eq, Debug, thiserror::Error)]
 pub enum CommandError {
+    /// Transcription contains invalid or overlapping word/segment timing.
+    #[error("The transcription contains invalid identifiers or word timing.")]
+    InvalidTranscript,
+    /// Subtitle metadata is invalid or the target is not a text clip.
+    #[error("The selected subtitle has invalid metadata or is not a text clip.")]
+    InvalidCaptionMetadata,
     /// [`Command::FillSlot`] named a media id no longer in the bin.
     #[error("That template slot no longer exists.")]
     SlotGone,
@@ -1195,6 +1217,9 @@ pub fn apply(
             })
         }
 
+        command @ (Command::UpsertTranscript { .. }
+        | Command::RemoveTranscript { .. }
+        | Command::SetCaptionMetadata { .. }) => subtitles::apply(project, mint, command),
         command @ (Command::AddMedia { .. }
         | Command::SetMediaPlaceholder { .. }
         | Command::FillSlot { .. }
