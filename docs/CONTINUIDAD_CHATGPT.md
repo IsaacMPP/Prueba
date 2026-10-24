@@ -1,5 +1,37 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## ALERTA VIGENTE — ERROR REAL DE COMPILACIÓN EN FASE 3 (24 OCT 2026)
+
+**PRIORIDAD ABSOLUTA DEL PRÓXIMO CHAT: corregir el error en Slint, sin agregar funciones nuevas ni modificar main.**
+
+**Evidencia verificada directamente en GitHub Actions:**
+- [Ejecución fallida #40112515736, run #31](https://github.com/IsaacMPP/Prueba/actions/runs/40112515736), commit evaluado \`6909022458b07d0419b743cd2e23da678ce477df\`.
+- Resultado: **failure** en compilación de la aplicación (\`concat\`, \`build.rs\`, \`ui/app.slint\`), **exit code 101**. No es una cancelación gris.
+- Previamente, **171 pruebas del modelo Rust PASARON y 0 fallaron** (\`test result: ok. 171 passed; 0 failed\`). Eso no valida la interfaz.
+- Mensaje repetido del compilador Slint: \`Expected ','. Use ',' instead of ';' to separate fields in a struct\`.
+- Archivo exacto en la rama F3: \`src/src/crates/concat/ui/dialogs/captions.slint\`, líneas **61 a 68**, dentro de \`export struct CaptionsSheetData\`.
+- Los campos introducidos se encuentran escritos como \`editor-tab: int;\`, \`editor-kind: int;\`, \`editor-items: [string];\`, \`editor-selected: int;\`, \`editor-text: string;\`, \`editor-dirty: bool;\`, \`editor-confirm: bool;\`, \`editor-message: string;\`. **La estructura Slint exige comas \`,\` en vez de punto y coma \`;\`**.
+- Comprobado también leyendo el archivo fuente de la rama, no solo el log. Esta es la **primera causa bloqueante demostrada**, pero al repararla podrían aparecer más errores aún ocultos.
+
+### Corrección autorizada como siguiente objetivo (sin ejecutar en esta conversación)
+
+1. En nueva conversación: verificar una vez el HEAD de \`feature/fase3-editor-transcripcion-subtitulos\`, el contenido actual de \`captions.slint\` y los últimos workflows. La rama tenía HEAD \`e684dbec99d814dc0f564f23b33a1032b874b8c4\` al investigar; HEAD cambia con cada actualización de documentación.
+2. Editar **solo** las ocho declaraciones de campos en la estructura \`CaptionsSheetData\` para sustituir los \`;\` por \`,\`; NO cambiar puntos y coma de propiedades/callbacks en otras partes, donde sí pueden ser válidos.
+3. Inspeccionar las demás declaraciones nuevas de la interfaz para coherencia estructural; no rediseñar el editor ni agregar funciones para resolver un error de sintaxis.
+4. Crear **un solo commit de código bien delimitado** y disparar **una** nueva validación GitHub Actions en la rama. Evitar sucesivos pushes que cancelen las ejecuciones pendientes.
+5. Si el nuevo workflow falla, diagnosticar el **primer error nuevo del log** (Slint o Rust) y corregirlo en la fuente nativa. No anticipar problemas no observados.
+6. Exigir pruebas Rust, compilación Slint, build Windows, smoke test e instalador correctos; después pedir prueba manual con video real para considerar F3A utilizable. PR #9 sigue **draft**; NO fusionar a main ni entregar instalador F3 sin validar.
+7. Al terminar, actualizar este documento y \`REGISTRO_MAESTRO.md\` con ejecución, SHA, resultado real y siguientes pendientes.
+
+**Nota de procedencia:** el run #31 compiló el commit \`69090224\`. Los commits posteriores hasta \`e684dbec\` eran documentación; se verificó que el bloque con los ocho \`;\` aún existía en la rama cuando se detectó el fallo.
+
+### Mensaje corto para pegar en un nuevo chat (comenzar directamente con el error)
+
+> Continuemos **Estudio Joven**, repo \`IsaacMPP/Prueba\`, rama \`feature/fase3-editor-transcripcion-subtitulos\`, PR #9. Lee primero \`docs/CONTINUIDAD_CHATGPT.md\` y \`docs/REGISTRO_MAESTRO.md\`. **Ya hay un error confirmado** en [Actions #40112515736](https://github.com/IsaacMPP/Prueba/actions/runs/40112515736): Slint falla al compilar \`src/src/crates/concat/ui/dialogs/captions.slint\` líneas 61–68 porque dentro de \`CaptionsSheetData\` ocho campos tienen \`;\` y deben llevar \`,\`. Las 171 pruebas Rust pasaron; la interfaz no compiló. Verifica HEAD y el log, corrige solamente el problema de sintaxis sin parches ni cambios a main, ejecuta un único workflow y resuelve cualquier nuevo error revelado. Después actualiza el registro y mantén PR #9 en borrador hasta las pruebas Windows reales.
+
+---
+
+
 > **Punto de recuperación preparado el 24 de octubre de 2026 (America/Cancun).**
 > Es un *resumen de referencia*, NO prueba de que GitHub mantenga hoy estos mismos estados. Siempre consultar GitHub antes de cambiar archivos.
 
@@ -82,7 +114,7 @@ En \`feature/fase3-editor-transcripcion-subtitulos\`:
 
 ## 5. Qué falta — prioridades estrictas
 
-**Próxima tarea inmediata: estabilizar Fase 3, NO comenzar karaoke ni voces IA aún.**
+**Próxima tarea inmediata: corregir el error confirmado de sintaxis de Slint (arriba), verificar compilación y estabilizar Fase 3. NO comenzar karaoke ni voces IA aún.**
 
 1. Consultar el último workflow de PR #9 y los logs. Si falló: diagnosticar y corregir la fuente Rust/Slint de esa rama. Evitar múltiples pushes simultáneos que cancelen runs pendientes.
 2. Al pasar CI: revisar instalador y pruebas manuales Windows con audio real (transcribir, seleccionar, editar, aplicar, descartar, cambiar frase/pestaña con borrador, Ctrl+Z/Ctrl+Y, guardar/cerrar/reabrir, exportar SRT). **No afirmar haber probado Windows manualmente sin evidencia.**
