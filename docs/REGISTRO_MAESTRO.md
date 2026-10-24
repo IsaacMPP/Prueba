@@ -1,19 +1,19 @@
-# Estudio Joven — Registro maestro de 37 compromisos
+# Estudio Joven — Registro maestro de 38 compromisos
 
-**Actualizado:** 23 de octubre de 2026 (Fase 2, primer incremento). **Fuente de verdad para las siguientes fases.**
+**Actualizado:** 24 de octubre de 2026 (Fase 3A, edición nativa, aún sin validar CI de esta rama). **Fuente de verdad para las siguientes fases.**
 
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |
 |---|---|---|---|---|---|
-| EJ-001 | Rust/Slint versionado, sin scripts de parcheo | P0 | En validación | F1 | CI nativo y smoke Windows exitosos |
-| EJ-002 | Transcripción persistente con IDs estables | P0 | Whisper conectado a comandos nativos; CI y prueba real pendientes | F2 | Guardar/cerrar/abrir conserva texto y tiempos |
-| EJ-003 | Identificar subtítulos, separados de títulos/créditos | P0 | Generador, importación y SRT conectados; CI y prueba real pendientes | F2 | Lotes/SRT excluyen títulos normales |
+| EJ-001 | Rust/Slint versionado, sin scripts de parcheo | P0 | Compilación Windows y smoke CI aprobados; PR pendiente sin fusionar | F1 | CI nativo y smoke Windows exitosos |
+| EJ-002 | Transcripción persistente con IDs estables | P0 | CI Windows F2B aprobado: 170 pruebas; falta prueba con video real | F2 | Guardar/cerrar/abrir conserva texto y tiempos |
+| EJ-003 | Identificar subtítulos, separados de títulos/créditos | P0 | Generador y SRT conectados; tests aprobados, prueba real pendiente | F2 | Lotes/SRT excluyen títulos normales |
 | EJ-004 | Modo independiente por subtítulo | P0 | Modelo y duplicación del clip conectados; render karaoke/UI pendientes | F2–F4 | A/B/A y reapertura sin cambios cruzados |
 | EJ-005 | Palabras temporizadas y estado de alineación | P0 | Tiempos tipados en modelo; edición y alineación pendientes | F2–F4 | Tiempos guardados, revisables y corregibles |
 | EJ-006 | Resaltado de fila seleccionada | P0 | Selector de frase activo; lista simultánea pendiente y CI sin validar | F3 | Selección visible en ambas listas |
 | EJ-007 | Sincronía panel ↔ línea de tiempo | P0 | Panel selecciona clip real; sincronización inversa pendiente | F3 | Selección bidireccional con el clip exacto |
-| EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | Código Rust+Slint integrado; prueba funcional pendiente | F3 | No perder borradores al navegar |
+| EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | Verificación posterior del guardado y refresco tras Deshacer implementados; CI/prueba Windows pendientes | F3 | No perder borradores al navegar |
 | EJ-009 | Deshacer/rehacer atómico individual y en lote | P0 | Pendiente | F3 | Ctrl+Z revierte solo la operación elegida |
 | EJ-010 | Edición por frase de texto y tiempos | P0 | Texto conectado; tiempos siguen pendientes | F3 | Cambiar sin volver a transcribir |
 | EJ-011 | Separar y unir frases | P0 | Pendiente | F3 | Preservar palabras y relojes |
@@ -34,7 +34,7 @@ Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = ex
 | EJ-026 | Animaciones estilo CapCut con control de duración | P1 | Prototipo previo | F5 | Preview/export y undo coherentes |
 | EJ-027 | Whisper CUDA NVIDIA con alternativa CPU | P1 | Pendiente | F6 | Benchmark en GPU y PC sin GPU |
 | EJ-028 | Detección automática de modelos Whisper | P1 | Pendiente | F6 | Selección sin buscar rutas |
-| EJ-029 | Transcripción no bloqueante y cancelable | P1 | Pendiente | F6 | UI responde mientras procesa |
+| EJ-029 | Transcripción no bloqueante y cancelable | P1 | Ejecución en trabajador y cancelación conservadas; pruebas de bloqueo real pendientes | F6 | UI responde mientras procesa |
 | EJ-030 | Fluidez con 500 subtítulos | P1 | Pendiente | F4–F6 | Perfil de RAM y latencia medido |
 | EJ-031 | Diarización de personas que hablan | P2 | Investigación | F7 | Prototipo contrastado con audio real |
 | EJ-032 | Subtítulos multidioma en pistas independientes | P2 | Pendiente | F7 | No sobrescribir subtítulos originales |
@@ -43,6 +43,7 @@ Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = ex
 | EJ-035 | Compatibilidad y migración de proyectos antiguos | P0 | Pendiente | F2 | Archivo viejo abre sin pérdidas |
 | EJ-036 | Pruebas Windows CPU/GPU y máquinas modestas | P1 | Pendiente | Todas | Hardware documentado y pruebas reales |
 | EJ-037 | Exportación coherente con vista previa | P0 | Conservado/parcial | Todas | Comparaciones visuales y automatizadas |
+| EJ-038 | Voces IA locales y proveedores TTS opcionales | P2 | Planificado, sin código implementado | F5.5 | Voz en español, escucha previa, pista de audio, licencias verificadas, sin exigir API ni internet |
 
 ## Reglas obligatorias
 
