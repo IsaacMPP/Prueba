@@ -1,24 +1,5 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
-## NUEVO INCREMENTO — SOPORTE LOG SONY, CANON Y DJI (24 OCT 2026, VALIDACIÓN PENDIENTE)
-
-**Nueva solicitud explícita del usuario:** incorporar colorización y normalización técnica LOG de cámaras Sony, Canon y DJI en **JA Video Studio** (editor Windows), tomando la usabilidad de ArtCraft/FilmCraft como referencia. El trabajo en móviles y **JA Connect** sigue pospuesto hasta la estabilización de Windows. No sustituir/renombrar el inspector original ni `main`, y no fusionar PR #9.
-
-**Código y workflow:** integrado en [commit ad57818](https://github.com/IsaacMPP/Prueba/commit/ad57818027d4de8312900549b4adc855fd3aecf7); la ejecución de Windows [#40133300404](https://github.com/IsaacMPP/Prueba/actions/runs/40133300404) estaba **pending** al registrarla. La ejecución de Fase 3C [#40130405239](https://github.com/IsaacMPP/Prueba/actions/runs/40130405239) se canceló por supersedencia al publicar cambios nuevos; la ejecución combinada actual deberá validar tanto F3C como LOG. Consultar sus resultados antes de declarar éxito. [Guía para usar LUT LOG](GUIA_COLOR_LOG.md).
-
-**Primera entrega en fuente, pendiente de CI y validación Windows:** el inspector existente **Ajustar** añade «Convertir LOG a Rec.709» con selección de perfiles Sony S-Log3/S-Gamut3.Cine, Sony S-Log2/S-Gamut, Canon Log 2/Cinema Gamut, Canon Log 3/Cinema Gamut, DJI D-Log y DJI D-Log M (LUT específica del modelo). Se importa una **LUT técnica 3D .cube oficial aportada por el usuario** (no se incluyen/redistribuyen LUTs propietarias ni se inventan transformaciones matemáticas), se comprueba el formato con el parser existente, se instala localmente como look GPU y se aplica como **primer efecto de la cadena de video**, antes de gradación creativa. Solo a un video seleccionado, no a títulos ni ajuste de otras pistas. Se conserva el clip original intacto, la LUT elegida queda referenciada en el proyecto y se integra con el deshacer nativo.
-
-**Seguridad de edición:** un LUT nuevo reemplaza solo el efecto técnico anterior **del clip actual**; no elimina otras LUT creativas, curvas, exposición, ni cambia las LUT ya usadas por otros proyectos o clips. El identificador de paquete incluye el perfil y un hash determinista de su contenido para evitar que una importación posterior cambie silenciosamente un proyecto anterior. El botón Quitar conversión LOG elimina solo el efecto técnico, no la corrección creativa. El selector se muestra también en la estructura táctil heredada (sin iniciar compilación Android).
-
-**Archivos a validar:** `src/src/crates/concat-effects/src/looks.rs` (importación aislada y tests), `src/src/crates/concat/src/studio.rs` (importar, aplicar, sustituir/quitar, tests), `src/src/crates/concat/ui/inspector/clip-inspector.slint` (interfaz), y conexiones en `ui/editor.slint`, `ui/workspace/config-pane.slint`, `ui/workspace/seat.slint`, `ui/phone/editor.slint`, `src/lib.rs`. Reutiliza el shader LUT 3D existente, así que debe verificar consistencia visual preview/export, archivo guardado/reapertura, selección de video, instalación de LUT, y compatibilidad de `.cube`/dominios (especialmente rangos completos vs de vídeo).
-
-**Limitaciones de la primera entrega:** no hay autodetección garantizada del perfil LOG por los metadatos del archivo, ni conversiones integradas «un clic sin LUT». Hay que obtener la LUT técnica correspondiente de la cámara desde el fabricante; particularmente **DJI D-Log M varía según producto**. La elección de un LUT incorrecto puede producir color inexacto y el editor no puede inferir matemáticamente si un LUT del usuario coincide con la fuente. La LUT se guarda en carpeta del usuario y no se incrusta en el proyecto al transportarlo a otra PC (queda pendiente empaquetado/revinculación). No afirmar que este incremento es funcional antes de pasar CI y hacer pruebas con muestras LOG reales Sony/Canon/DJI.
-
-**Prioridad de continuidad:** cerrar CI/verificación F3C de subtítulos cuando termine, validar incremento LOG en Windows, continuar edición/segmentación/karaoke y los **38 compromisos EJ-001 a EJ-038** sin agregar ni borrar IDs. Mantener `main` y la documentación maestra intactas salvo las notas de avance, PR #9 en draft. No hay trabajo móvil en marcha.
-
----
-
-
 ## IDENTIDAD DEFINITIVA Y ALCANCE — JA VIDEO STUDIO (24 OCT 2026)
 
 **Decisión explícita del usuario:** el nombre **final y público del editor de video** será **JA Video Studio**. El nombre técnico/de trabajo histórico `Estudio Joven` y las rutas, paquetes, ramas y documentos existentes pueden mantenerse **temporalmente** para evitar cambios disruptivos durante la estabilización. **No renombrar todavía el código fuente, paquetes, identificadores, instaladores o rutas de datos sin planificación y autorización explícita**, con migración de proyectos, compatibilidad y pruebas.

@@ -1335,16 +1335,6 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
     editor.on_adjust_set(on_lanes!(|state, key: SharedString, value: f32| {
         state.adjust_set(key.as_str(), value);
     }));
-    editor.on_camera_log_import(on_window!(|state, profile: i32| {
-        let Some(clip_id) = state.sole_selection() else {
-            state.notify("Selecciona un video en la línea de tiempo.", true);
-            return;
-        };
-        Studio::import_camera_log(profile, clip_id);
-    }));
-    editor.on_camera_log_clear(on_lanes!(|state| {
-        state.clear_camera_log();
-    }));
     editor.on_curve_point(on_lanes!(|state,
                                      entry: i32,
                                      key: SharedString,

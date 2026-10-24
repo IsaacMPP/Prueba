@@ -87,50 +87,21 @@ pub fn import(dir: &Path, path: &Path) -> Result<String, String> {
     if slug.is_empty() {
         slug = "look".to_owned();
     }
+    let id = format!("user.{slug}");
     let text = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
-    import_table(dir, &format!("user.{slug}"), stem.trim(), &text, space_of(path, &text))
-}
-
-/// Installs an official camera LOG input LUT without modifying any clip.
-/// A camera-and-content-specific id prevents importing a different table
-/// from silently changing the look of previously graded projects.
-/// No manufacturer table is redistributed by the application.
-pub fn import_camera(
-    dir: &Path,
-    path: &Path,
-    profile: &str,
-    label: &str,
-) -> Result<String, String> {
-    if profile.is_empty()
-        || !profile.bytes().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'-')
-    {
-        return Err("invalid camera profile identifier".to_owned());
-    }
-    let text = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
-    // FNV-1a over file bytes is deterministic across operating systems and
-    // sessions. The prefix distinguishes technical camera LUTs from creative
-    // imported looks, and allows replacing only the camera transform.
-    let hash = text.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
-        (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
-    });
-    let id = format!("user.camera-{profile}-{hash:016x}");
-    import_table(dir, &id, label, &text, Space::Display)
-}
-
-/// The same checked, GPU-backed format-2 package path as ordinary LUTs.
-/// The LUT is copied into the application's Looks folder: the video and
-/// project on disk remain unchanged.
-fn import_table(dir: &Path, id: &str, name: &str, text: &str, space: Space) -> Result<String, String> {
-    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
+    // A byte-order mark would hide a `TITLE` on the first line from `space_of`.
+    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
     crate::cube::parse(text)?;
-    let folder = dir.join(id);
+    let folder = dir.join(&id);
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
-    let written = manifest(id, name.trim(), TABLE, space);
+    let written = manifest(&id, stem.trim(), TABLE, space_of(path, text));
     std::fs::write(folder.join("effect.toml"), written).map_err(|error| error.to_string())?;
     std::fs::write(folder.join("effect.wgsl"), SHADER).map_err(|error| error.to_string())?;
     std::fs::write(folder.join(TABLE), text).map_err(|error| error.to_string())?;
+    // A still an earlier import drew for this name: the card drawn from the
+    // package's own shader replaces it.
     let _ = std::fs::remove_file(folder.join("preview.png"));
-    Ok(id.to_owned())
+    Ok(id)
 }
 
 /// Rewrites every look an earlier build made from a table in `dir` onto
@@ -195,43 +166,6 @@ fn bare(shader: &str) -> String {
         .flat_map(str::chars)
         .filter(|c| !c.is_whitespace())
         .collect()
-}
-
-#[cfg(test)]
-mod camera_lut_tests {
-    use super::*;
-
-    #[test]
-    fn camera_lut_id_is_stable_and_profile_specific() {
-        let dir = std::env::temp_dir().join(format!("ja-camera-lut-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).expect("test directory");
-        let source = dir.join("original.cube");
-        std::fs::write(&source, "TITLE \"camera\"\nLUT_3D_SIZE 2\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n0 0 1\n1 0 1\n0 1 1\n1 1 1\n").unwrap();
-        let sony = import_camera(&dir, &source, "sony-slog3", "Sony S-Log3").unwrap();
-        let second = import_camera(&dir, &source, "sony-slog3", "Sony S-Log3").unwrap();
-        let canon = import_camera(&dir, &source, "canon-clog3", "Canon Log 3").unwrap();
-        assert_eq!(sony, second);
-        assert_ne!(sony, canon);
-        assert!(sony.starts_with("user.camera-sony-slog3-"));
-        assert!(dir.join(&sony).join(TABLE).is_file());
-        std::fs::write(&source, "LUT_3D_SIZE 2\n1 1 1\n1 0 0\n0 1 0\n1 1 0\n0 0 1\n1 0 1\n0 1 1\n0 0 0\n").unwrap();
-        let other = import_camera(&dir, &source, "sony-slog3", "Sony S-Log3").unwrap();
-        assert_ne!(sony, other, "a newly imported LUT cannot silently recolor old clips");
-        assert!(dir.join(&sony).join(TABLE).is_file(), "older camera LUT remains available");
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn invalid_camera_identifiers_and_tables_are_rejected() {
-        let dir = std::env::temp_dir().join(format!("ja-camera-invalid-{}", std::process::id()));
-        let _ = std::fs::create_dir_all(&dir);
-        let source = dir.join("broken.cube");
-        std::fs::write(&source, "not a LUT").unwrap();
-        assert!(import_camera(&dir, &source, "../bad", "Bad").is_err());
-        assert!(import_camera(&dir, &source, "sony-slog3", "Sony S-Log3").is_err());
-        let _ = std::fs::remove_dir_all(&dir);
-    }
 }
 
 #[cfg(test)]

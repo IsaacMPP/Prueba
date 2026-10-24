@@ -1394,57 +1394,6 @@ struct ShelfStamp {
 /// The built-in colour package's id; see `adjust_rows` and `Studio::adjust_set`.
 const ADJUST_ID: &str = "concat.adjust";
 
-/// Technical camera input transforms. The matching manufacturer .cube
-/// file is user-supplied, since redistribution rights and DJI's D-Log M
-/// response differ between products. Technical conversion is never treated
-/// as a creative LUT or silently guessed from the video filename.
-const CAMERA_LOG_PROFILES: [(&str, &str); 6] = [
-    ("sony-slog3", "Sony S-Log3 / S-Gamut3.Cine"),
-    ("sony-slog2", "Sony S-Log2 / S-Gamut"),
-    ("canon-clog2", "Canon Log 2 / Cinema Gamut"),
-    ("canon-clog3", "Canon Log 3 / Cinema Gamut"),
-    ("dji-dlog", "DJI D-Log"),
-    ("dji-dlogm", "DJI D-Log M (LUT de modelo)"),
-];
-
-const CAMERA_LUT_PREFIX: &str = "user.camera-";
-
-/// A technical input LUT replaces the older camera input transform, not
-/// any creative looks or manual adjustments. The first effect in the
-/// chain runs before the grade and is the conversion's proper position.
-fn replace_camera_lut(mut effects: Vec<AppliedFilter>, id: &str) -> Vec<AppliedFilter> {
-    effects.retain(|effect| !effect.id.starts_with(CAMERA_LUT_PREFIX));
-    effects.insert(0, AppliedFilter::new(id));
-    effects
-}
-
-#[cfg(test)]
-mod camera_log_tests {
-    use super::*;
-
-    #[test]
-    fn replace_camera_transform_preserves_creative_effects_and_order() {
-        let original = vec![
-            AppliedFilter::new("user.camera-sony-slog3-0001"),
-            AppliedFilter::new("concat.adjust"),
-            AppliedFilter::new("user.creative-look"),
-        ];
-        let updated = replace_camera_lut(original, "user.camera-dji-dlogm-0002");
-        let ids: Vec<&str> = updated.iter().map(|effect| effect.id.as_str()).collect();
-        assert_eq!(ids, [
-            "user.camera-dji-dlogm-0002", "concat.adjust", "user.creative-look"
-        ]);
-        assert_eq!(
-            replace_camera_lut(updated.clone(), "user.camera-dji-dlogm-0002")
-                .iter().map(|effect| effect.id.as_str()).collect::<Vec<_>>(),
-            ids,
-            "selecting the same input LUT must not stack it twice"
-        );
-    }
-}
-
-
-
 /// The kinds the colour panel grades: a picture, and a layer, which grades
 /// everything beneath it - an adjustment layer is a layer whose chain
 /// starts with the panel's own package.
@@ -4169,122 +4118,6 @@ impl Studio {
     pub fn place_adjustment_layer(&mut self, label: &str) {
         self.place_filter_layer(ADJUST_ID, label);
         self.inspector_jump = (self.inspector_jump.0 + 1, "Layer", "Adjust");
-    }
-
-    /// Which technical LOG-to-Rec.709 camera LUT is active on the selected
-    /// video, independently of creative looks and ordinary grade parameters.
-    pub fn camera_log_current(&self) -> String {
-        let Some(clip) = self.sole_selection().and_then(|id| self.clip(&id)) else {
-            return String::new();
-        };
-        let Some(link) = clip.video_effects.iter().find(|link| link.id.starts_with(CAMERA_LUT_PREFIX)) else {
-            return String::new();
-        };
-        CAMERA_LOG_PROFILES
-            .iter()
-            .find(|(slug, _)| link.id.starts_with(&format!("{CAMERA_LUT_PREFIX}{slug}-")))
-            .map_or_else(|| "Conversión LOG importada".to_owned(), |(_, name)| (*name).to_owned())
-    }
-
-    /// Prompts for a manufacturer-provided .cube for the selected video.
-    /// The target ID is captured before the asynchronous picker opens,
-    /// and is rechecked when the picker returns.
-    pub fn import_camera_log(profile: i32, clip_id: String) {
-        let Some((_, label)) = usize::try_from(profile)
-            .ok()
-            .and_then(|idx| CAMERA_LOG_PROFILES.get(idx))
-        else {
-            return;
-        };
-        crate::host::pick_files_then(
-            format!("LUT oficial .cube — {label}"),
-            Some(("LUT técnica de cámara".to_owned(), &["cube"])),
-            move |studio, _, _, files| {
-                if let Some(path) = files.into_iter().next() {
-                    studio.apply_camera_log(&clip_id, profile, &path);
-                }
-            },
-        );
-    }
-
-    /// Installs the LUT, then adds one clip-level effect. A new camera LUT
-    /// replaces an earlier camera transform on this clip only. The old
-    /// package remains installed for every other project that refers to it.
-    fn apply_camera_log(&mut self, clip_id: &str, profile: i32, path: &std::path::Path) {
-        let Some(&(slug, label)) = usize::try_from(profile)
-            .ok()
-            .and_then(|idx| CAMERA_LOG_PROFILES.get(idx))
-        else {
-            self.notify("Perfil LOG desconocido.", true);
-            return;
-        };
-        let Some(clip) = self.clip(clip_id).cloned() else {
-            self.notify("El clip original ya no existe.", true);
-            return;
-        };
-        if self.sole_selection().as_deref() != Some(clip_id)
-            || clip.kind != model::ClipKind::Video
-            || self.locked(&clip.track_id)
-        {
-            self.notify("Selecciona un único video desbloqueado y vuelve a aplicar la LUT.", true);
-            return;
-        }
-        let id = match concat_effects::looks::import_camera(
-            &Self::looks_dir(&self.host.dirs), path, slug, label,
-        ) {
-            Ok(id) => id,
-            Err(error) => {
-                self.notify(&format!("No se pudo importar la LUT .cube: {error}"), true);
-                return;
-            }
-        };
-        self.look_art.borrow_mut().remove(&id);
-        self.reload_packages(false);
-        if Catalogue::builtin().get(&id).is_none() {
-            self.notify("La LUT no superó la validación del motor de color.", true);
-            return;
-        }
-
-        // Input transform first, then creative filters, adjustments and
-        // effects. Replacing it is a single native undo step.
-        let effects = replace_camera_lut(clip.video_effects, &id);
-        self.apply(Command::UpdateClip {
-            clip_id: clip_id.to_owned(),
-            patch: ClipPatch {
-                video_effects: Some(effects),
-                ..ClipPatch::default()
-            },
-        });
-        self.notify(&format!("LUT de entrada aplicada: {label}"), false);
-    }
-
-    /// Removes only the technical camera input transform. Creative LUTs,
-    /// wheels, curves and other effects remain untouched and undoable.
-    pub fn clear_camera_log(&mut self) {
-        let Some(id) = self.sole_selection() else {
-            return;
-        };
-        let Some(clip) = self.clip(&id).cloned() else {
-            return;
-        };
-        if self.locked(&clip.track_id) {
-            self.notify("La pista está bloqueada.", true);
-            return;
-        }
-        let previous = clip.video_effects.len();
-        let retained: Vec<AppliedFilter> = clip.video_effects.into_iter()
-            .filter(|effect| !effect.id.starts_with(CAMERA_LUT_PREFIX))
-            .collect();
-        if retained.len() == previous {
-            return;
-        }
-        self.apply(Command::UpdateClip {
-            clip_id: id,
-            patch: ClipPatch {
-                video_effects: Some(retained),
-                ..ClipPatch::default()
-            },
-        });
     }
 
     /// A LUT from the Adjustments page: onto the selected clip's chain -
@@ -9452,12 +9285,6 @@ impl Studio {
         });
 
         editor.set_selected_clip(self.selected());
-        editor.set_camera_log_current(self.camera_log_current().into());
-        editor.set_camera_log_enabled(
-            self.sole_selection()
-                .and_then(|id| self.clip(&id))
-                .is_some_and(|clip| clip.kind == model::ClipKind::Video && !self.locked(&clip.track_id)),
-        );
         editor.set_selected_transition(self.selected_transition_data());
         let (knobs, choices) = self.transition_knobs();
         sync(&models.transition_knobs, knobs);
