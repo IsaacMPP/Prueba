@@ -203,6 +203,15 @@ impl CaptionsPane {
                         let Some(subject) = subject else {
                             return;
                         };
+                        // Never create orphan captions if their source clip
+                        // was deleted or the editor switched timelines while
+                        // recognition ran.
+                        if studio.timeline().id != subject.timeline_id
+                            || studio.clip(&subject.clip_id).is_none()
+                        {
+                            self.message = t("captions.clipNoLongerTimeline");
+                            return;
+                        }
                         let look = subject.look;
                         let base = studio.prefs.title_style.clone();
                         // Keep recognition and generated clips together as one
@@ -368,7 +377,7 @@ impl CaptionsPane {
             self.message = t("captions.noCaptionsToExport");
             return;
         };
-        let cues = srt::title_cues(studio.timeline(), Some(&lane.track_id));
+        let cues = caption_cues(studio.timeline(), Some(&lane.track_id));
         if let Err(error) = std::fs::write(path, srt::write(&cues)) {
             log::warn!("captions: could not write {}: {error}", path.display());
             self.message = tf("captions.couldNotWriteSubtitles", &[&error]);
@@ -384,7 +393,10 @@ impl CaptionsPane {
         // Which lane was written goes without saying when it was the
         // selected title's, or the only lane with titles; otherwise the
         // notice says it was the busiest, and how to pick another.
-        let busiest = lane.busiest && srt::title_lanes(studio.timeline()) > 1;
+        let busiest = lane.busiest && studio.timeline().tracks.iter()
+            .filter(|track| studio.timeline().clips.iter()
+                .any(|clip| clip.track_id == track.id && clip.caption_metadata().is_some()))
+            .count() > 1;
         let say = move |studio: &mut Studio, place: &str| {
             // Each key spelled out where it is used: scripts/locales.py
             // finds the strings the source asks for by reading it.
@@ -638,27 +650,47 @@ struct ExportLane {
     busiest: bool,
 }
 
-/// The lane whose titles are written out as captions: the selected
-/// title's; or with no title selected, the lane with the most titles -
-/// captions come many to a lane, a title card one or two, and nothing
-/// else in the document tells them apart (see `srt::busiest_title_lane`).
-/// None when the timeline has no title.
+/// Select only lanes carrying explicitly identified subtitles. A selected
+/// ordinary title must never make credits or headings appear in an SRT.
 fn export_lane(studio: &Studio) -> Option<ExportLane> {
+    let timeline = studio.timeline();
     let selected = studio
         .sole_selection()
         .and_then(|id| studio.clip(&id))
-        .filter(|clip| clip.kind == ClipKind::Text)
+        .filter(|clip| clip.caption_metadata().is_some())
         .map(|clip| clip.track_id.clone());
-    match selected {
-        Some(track_id) => Some(ExportLane {
-            track_id,
-            busiest: false,
-        }),
-        None => srt::busiest_title_lane(studio.timeline()).map(|track_id| ExportLane {
-            track_id,
-            busiest: true,
-        }),
+    if let Some(track_id) = selected {
+        return Some(ExportLane { track_id, busiest: false });
     }
+    let track_id = timeline.tracks.iter().filter_map(|track| {
+        let count = timeline.clips.iter()
+            .filter(|clip| clip.track_id == track.id && clip.caption_metadata().is_some())
+            .count();
+        (count > 0).then_some((track.id.clone(), count))
+    }).max_by_key(|(_, count)| *count).map(|(id, _)| id)?;
+    Some(ExportLane { track_id, busiest: true })
+}
+
+/// Build SRT cues from actual subtitles, never from arbitrary text clips.
+/// Legacy title-only projects require explicit classification, not guessing.
+fn caption_cues(
+    timeline: &concat_project::model::Timeline,
+    track_id: Option<&str>,
+) -> Vec<srt::Cue> {
+    let mut cues: Vec<srt::Cue> = timeline.clips.iter()
+        .filter(|clip| clip.caption_metadata().is_some()
+            && track_id.is_none_or(|id| clip.track_id == id))
+        .filter_map(|clip| {
+            let text = clip.text.as_ref()?.content.trim();
+            (!text.is_empty()).then(|| srt::Cue {
+                start: clip.start,
+                end: clip.start + clip.duration,
+                text: text.to_owned(),
+            })
+        })
+        .collect();
+    cues.sort_by(|a, b| a.start.total_cmp(&b.start));
+    cues
 }
 
 /// The name an export is offered under: the project's, as one file name,
@@ -904,6 +936,25 @@ fn wrap_caption(sentence: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{script_captions, source_label};
+
+    #[test]
+    fn srt_export_excludes_ordinary_titles_even_on_the_caption_lane() {
+        use concat_project::model::TextStyle;
+        let mut editor = concat_project::Editor::new();
+        let captions = super::srt_commands(vec![concat_project::srt::Cue {
+            start: 0.5, end: 1.5, text: "Subtítulo".into(),
+        }], (0.35, 0.04), None);
+        editor.apply(concat_project::Command::Batch { commands: captions }).unwrap();
+        editor.apply(concat_project::Command::AddTextClip {
+            track_id: Some("T1".into()), above: false, start: 3.0,
+            style: Some(TextStyle { content: "Créditos".into(), ..TextStyle::default() }),
+            duration: Some(2.0), offset_y: None,
+        }).unwrap();
+        let cues = super::caption_cues(editor.project().active(), Some("T1"));
+        assert_eq!(cues.len(), 1);
+        assert_eq!(cues[0].text, "Subtítulo");
+        assert_eq!(editor.project().caption_clip_ids("TL1").len(), 1);
+    }
 
     #[test]
     fn imported_srt_preserves_short_cues_and_multiline_text() {
