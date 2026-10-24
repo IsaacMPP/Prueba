@@ -8,6 +8,7 @@ import { Button, CopyChip, DialogRow, DialogSection, Modal, Progress } from "../
 import { SegmentedControl } from "../primitives/segmented-control.slint";
 import { Select } from "../primitives/select.slint";
 import { Switch } from "../inspector/controls.slint";
+import { NumberField } from "../primitives/number-field.slint";
 
 // Captions: what the tray's Captions tool opens.
 //
@@ -45,6 +46,13 @@ export struct CaptionsSheetData {
     placement: int,
     /// 0 Small, 1 Medium, 2 Large
     size: int,
+    // Caption readability controls, not appearance or karaoke state.
+    rules-layout: int,
+    rules-chars: float,
+    rules-words: float,
+    rules-min-seconds: float,
+    rules-max-seconds: float,
+    rules-gap-frames: float,
     running: bool,
     /// 0..1: where the transcription surely is.
     progress: float,
@@ -83,6 +91,12 @@ export component CaptionsDialog inherits Modal {
     callback model-changed(index: int);
     callback placement-changed(index: int);
     callback size-changed(index: int);
+    callback rules-layout(index: int);
+    callback rules-chars(value: float);
+    callback rules-words(value: float);
+    callback rules-min-seconds(value: float);
+    callback rules-max-seconds(value: float);
+    callback rules-gap-frames(value: float);
     callback begin();
     callback cancel();
     callback import-srt();
@@ -387,10 +401,86 @@ export component CaptionsDialog inherits Modal {
                 }
             }
 
+            if !root.from-voice: Text {
+                text: I18n.t("captions.oneTitlePerSentence");
+                color: Theme.fg-dim;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+        }
+
+        if !root.data.running && root.data.editor-tab == 0 && root.from-voice: DialogSection {
+            title: "Segmentación de subtítulos";
+            collapsible: true;
+
+            DialogRow {
+                label: "Distribución";
+                SegmentedControl {
+                    options: ["1 línea", "2 líneas", "1 palabra"];
+                    current: root.data.rules-layout;
+                    changed(index) => { root.rules-layout(index); }
+                }
+            }
+            DialogRow {
+                label: "Caracteres por línea";
+                NumberField {
+                    value: root.data.rules-chars;
+                    minimum: 12;
+                    maximum: 80;
+                    precision: 0;
+                    unit: "car.";
+                    changed(value) => { root.rules-chars(value); }
+                }
+            }
+            DialogRow {
+                label: "Máximo de palabras";
+                NumberField {
+                    value: root.data.rules-words;
+                    minimum: 1;
+                    maximum: 40;
+                    precision: 0;
+                    unit: "pal.";
+                    enabled: root.data.rules-layout != 2;
+                    changed(value) => { root.rules-words(value); }
+                }
+            }
+            DialogRow {
+                label: "Duración mínima";
+                NumberField {
+                    value: root.data.rules-min-seconds;
+                    minimum: 0.1;
+                    maximum: root.data.rules-max-seconds;
+                    step: 0.1;
+                    precision: 1;
+                    unit: "s";
+                    changed(value) => { root.rules-min-seconds(value); }
+                }
+            }
+            DialogRow {
+                label: "Duración máxima";
+                NumberField {
+                    value: root.data.rules-max-seconds;
+                    minimum: root.data.rules-min-seconds;
+                    maximum: 20;
+                    step: 0.5;
+                    precision: 1;
+                    unit: "s";
+                    changed(value) => { root.rules-max-seconds(value); }
+                }
+            }
+            DialogRow {
+                label: "Separación";
+                NumberField {
+                    value: root.data.rules-gap-frames;
+                    minimum: 0;
+                    maximum: 12;
+                    precision: 0;
+                    unit: "fot.";
+                    changed(value) => { root.rules-gap-frames(value); }
+                }
+            }
             Text {
-                text: root.from-voice
-                    ? I18n.t("captions.oneTitlePerPhrase")
-                    : I18n.t("captions.oneTitlePerSentence");
+                text: "Los cortes dentro de cada frase tienen tiempos estimados. El karaoke requerirá alineación por palabra. La duración mínima es orientativa: no ampliamos textos fuera del audio reconocido.";
                 color: Theme.fg-dim;
                 font-size: Theme.fs-sm;
                 wrap: word-wrap;

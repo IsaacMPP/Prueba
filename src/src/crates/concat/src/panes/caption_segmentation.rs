@@ -10,10 +10,15 @@
 pub struct CaptionRules {
     /// 0 = single line, 1 = two lines, 2 = one word at a time.
     pub layout: u8,
+    /// Maximum Unicode characters per visual line (except indivisible long words).
     pub chars_per_line: usize,
+    /// Maximum spoken tokens in one cue (unless one-word mode is enabled).
     pub words_per_caption: usize,
+    /// Desired minimum duration, respected when source times and caps permit.
     pub min_seconds: f64,
+    /// Target maximum duration, never used to invent speech timestamps.
     pub max_seconds: f64,
+    /// User-requested space between consecutive cues, in project frames.
     pub gap_frames: u32,
 }
 
@@ -43,8 +48,11 @@ impl CaptionRules {
 /// A generated caption with estimated boundaries *inside* one Whisper phrase.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TimedCaption {
+    /// Text of the estimated caption, with line wraps for presentation.
     pub text: String,
+    /// Estimated source-relative start in seconds.
     pub start: f64,
+    /// Estimated source-relative end in seconds.
     pub end: f64,
 }
 

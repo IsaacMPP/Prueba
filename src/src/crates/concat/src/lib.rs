@@ -2075,6 +2075,24 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
     app.on_captions_size_changed(on_window!(|state, index: i32| {
         state.handle(Msg::Captions(CaptionsMsg::SizeChanged(index)));
     }));
+    app.on_captions_rules_layout(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesLayout(index)));
+    }));
+    app.on_captions_rules_chars(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesChars(value)));
+    }));
+    app.on_captions_rules_words(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesWords(value)));
+    }));
+    app.on_captions_rules_min_seconds(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesMinSeconds(value)));
+    }));
+    app.on_captions_rules_max_seconds(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesMaxSeconds(value)));
+    }));
+    app.on_captions_rules_gap_frames(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesGapFrames(value)));
+    }));
     app.on_captions_begin(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::Begin));
     }));

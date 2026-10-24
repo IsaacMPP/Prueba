@@ -30,6 +30,7 @@ use crate::host::{on_ui_in_project, spawn_in_project};
 use crate::i18n::{t, tf};
 use crate::panes::Msg;
 use crate::panes::caption_editor::{CaptionEditor, Navigation};
+use crate::panes::caption_segmentation::{CaptionRules, voice_captions};
 use crate::panes::pace::{Pace, Stage, Timings};
 use crate::panes::settings::installed;
 use crate::studio::Studio;
@@ -61,6 +62,12 @@ pub enum CaptionsMsg {
     ModelChanged(i32),
     PlacementChanged(i32),
     SizeChanged(i32),
+    RulesLayout(i32),
+    RulesChars(f32),
+    RulesWords(f32),
+    RulesMinSeconds(f32),
+    RulesMaxSeconds(f32),
+    RulesGapFrames(f32),
     /// Run the pass the sheet describes.
     Begin,
     Cancel,
@@ -105,6 +112,8 @@ struct Subject {
     /// the sound in: what the run's timing is kept by.
     model: String,
     windows: f32,
+    rules: CaptionRules,
+    fps: f64,
 }
 
 /// Seconds whisper takes over one thirty-second window, per megabyte of
@@ -136,6 +145,7 @@ pub struct CaptionsPane {
     pub placement: usize,
     /// 0 small, 1 medium, 2 large.
     pub size: usize,
+    pub rules: CaptionRules,
     pub running: bool,
     /// How far the running transcription looks.
     pub pace: Pace,
@@ -197,6 +207,25 @@ impl CaptionsPane {
                 self.placement = (index.max(0) as usize).min(2);
             }
             CaptionsMsg::SizeChanged(index) => self.size = (index.max(0) as usize).min(2),
+            CaptionsMsg::RulesLayout(v) => self.rules.layout = v.clamp(0, 2) as u8,
+            CaptionsMsg::RulesChars(v) if v.is_finite() => {
+                self.rules.chars_per_line = v.round().clamp(12.0, 80.0) as usize;
+            }
+            CaptionsMsg::RulesWords(v) if v.is_finite() => {
+                self.rules.words_per_caption = v.round().clamp(1.0, 40.0) as usize;
+            }
+            CaptionsMsg::RulesMinSeconds(v) if v.is_finite() => {
+                self.rules.min_seconds = f64::from(v).clamp(0.1, self.rules.max_seconds);
+            }
+            CaptionsMsg::RulesMaxSeconds(v) if v.is_finite() => {
+                self.rules.max_seconds = f64::from(v).clamp(self.rules.min_seconds, 20.0);
+            }
+            CaptionsMsg::RulesGapFrames(v) if v.is_finite() => {
+                self.rules.gap_frames = v.round().clamp(0.0, 12.0) as u32;
+            }
+            CaptionsMsg::RulesChars(_) | CaptionsMsg::RulesWords(_)
+            | CaptionsMsg::RulesMinSeconds(_) | CaptionsMsg::RulesMaxSeconds(_)
+            | CaptionsMsg::RulesGapFrames(_) => {}
             CaptionsMsg::Begin => {
                 if self.from_voice {
                     self.run_sound(studio);
@@ -259,30 +288,36 @@ impl CaptionsPane {
                         };
                         let mut saved_segments = Vec::new();
                         let mut commands = Vec::new();
-                        for (index, segment) in segments.into_iter().enumerate() {
-                            let text = segment.text.trim().to_owned();
-                            if text.is_empty() || !segment.start.is_finite()
+                        // One stable segment ID per generated caption. All
+                        // cuts are estimated *within* the Whisper phrase;
+                        // no fabricated per-word alignment is stored.
+                        for segment in segments {
+                            if segment.text.trim().is_empty() || !segment.start.is_finite()
                                 || !segment.end.is_finite() || segment.start < 0.0
                             {
                                 continue;
                             }
                             let end = segment.end.max(segment.start + 0.01);
-                            let segment_id = format!("seg{}", index + 1);
-                            saved_segments.push(TranscriptSegment {
-                                id: segment_id.clone(),
-                                text: text.clone(),
-                                start: segment.start,
-                                end,
-                                words: Vec::new(),
-                            });
-                            commands.push(caption_clip(
-                                text,
-                                subject.start + segment.start / subject.speed,
-                                ((end - segment.start) / subject.speed).max(0.2),
-                                look,
-                                base.as_ref(),
-                                Some((&transcript_id, &segment_id)),
-                            ));
+                            for cue in voice_captions(
+                                &segment.text, segment.start, end, subject.rules, subject.fps
+                            ) {
+                                let segment_id = format!("seg{}", saved_segments.len() + 1);
+                                saved_segments.push(TranscriptSegment {
+                                    id: segment_id.clone(),
+                                    text: cue.text.clone(),
+                                    start: cue.start,
+                                    end: cue.end,
+                                    words: Vec::new(),
+                                });
+                                commands.push(caption_clip(
+                                    cue.text,
+                                    subject.start + cue.start / subject.speed,
+                                    ((cue.end - cue.start) / subject.speed).max(0.2),
+                                    look,
+                                    base.as_ref(),
+                                    Some((&transcript_id, &segment_id)),
+                                ));
+                            }
                         }
                         let count = commands.len();
                         self.open = false;
@@ -525,6 +560,7 @@ impl CaptionsPane {
         // Reopening does not silently discard a draft; the explicit close
         // confirmation owns that choice.
         let editor = std::mem::take(&mut self.editor);
+        let rules = self.rules;
         *self = CaptionsPane {
             open: true,
             editor,
@@ -534,6 +570,7 @@ impl CaptionsPane {
             model,
             placement: 0,
             size: 1,
+            rules,
             timings: std::mem::take(&mut self.timings),
             ..CaptionsPane::default()
         };
@@ -650,6 +687,8 @@ impl CaptionsPane {
             look: self.look(),
             model,
             windows,
+            rules: self.rules,
+            fps: f64::from(studio.frame_rate().max(1.0)),
         });
         self.running = true;
         self.message.clear();
@@ -701,6 +740,12 @@ impl CaptionsPane {
             model: self.model as i32,
             placement: self.placement as i32,
             size: self.size as i32,
+            rules_layout: self.rules.layout as i32,
+            rules_chars: self.rules.chars_per_line as f32,
+            rules_words: self.rules.words_per_caption as f32,
+            rules_min_seconds: self.rules.min_seconds as f32,
+            rules_max_seconds: self.rules.max_seconds as f32,
+            rules_gap_frames: self.rules.gap_frames as f32,
             running: self.running,
             progress: self.pace.floor,
             ceiling: self.pace.ceiling,
