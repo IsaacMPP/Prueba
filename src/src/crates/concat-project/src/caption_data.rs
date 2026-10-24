@@ -6,7 +6,8 @@
 use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_value, to_value};
-use crate::model::{Clip, ClipKind, Project};
+use crate::model::{Clip, ClipKind, Project, Timeline};
+use crate::srt;
 
 const TRANSCRIPTS: &str = "estudioJovenTranscripts";
 const CAPTION: &str = "estudioJovenCaption";
@@ -122,7 +123,9 @@ impl Default for CaptionMetadata {
 }
 
 impl CaptionMetadata {
-    pub fn valid_for_clip(&self, duration: f64) -> bool {
+    /// Metadata identity must survive a later trim: trimming a clip can
+    /// shorten it before the karaoke clocks are realigned in the editor.
+    pub fn valid(&self) -> bool {
         let color_ok = self.active_color.strip_prefix('#')
             .is_some_and(|hex| hex.len() == 6 && hex.bytes().all(|c| c.is_ascii_hexdigit()));
         if !color_ok { return false; }
@@ -130,12 +133,21 @@ impl CaptionMetadata {
         let mut previous = 0.0;
         for word in &self.words {
             if word.id.trim().is_empty() || !seen.insert(word.id.as_str())
-                || !interval(word.start, word.end)
-                || word.end > duration + 0.000001
-                || word.start < previous { return false; }
+                || !interval(word.start, word.end) || word.start < previous
+            {
+                return false;
+            }
             previous = word.start;
         }
         true
+    }
+
+    /// Editing or duplicating a trimmed clip must preserve its identity and
+    /// word clocks until the dedicated timing editor realigns them. Reject
+    /// non-finite or nonpositive clip spans; do not silently discard clocks
+    /// whose ends extend beyond a newly trimmed clip.
+    pub fn valid_for_clip(&self, duration: f64) -> bool {
+        self.valid() && duration.is_finite() && duration > 0.0
     }
 }
 
@@ -146,7 +158,7 @@ impl Clip {
     pub fn caption_metadata(&self) -> Option<CaptionMetadata> {
         if self.kind != ClipKind::Text { return None; }
         let meta = from_value::<CaptionMetadata>(self.extra.get(CAPTION)?.clone()).ok()?;
-        meta.valid_for_clip(self.duration).then_some(meta)
+        meta.valid().then_some(meta)
     }
 
     pub(crate) fn set_caption_metadata(&mut self, meta: Option<CaptionMetadata>) -> bool {
@@ -195,6 +207,24 @@ impl Project {
         else { self.extra.insert(TRANSCRIPTS.into(), to_value(items).expect("transcripts serialize")); }
         true
     }
+}
+
+/// Export only explicitly identified subtitle clips, never regular titles.
+pub fn caption_cues(timeline: &Timeline, track_id: Option<&str>) -> Vec<srt::Cue> {
+    let mut cues: Vec<srt::Cue> = timeline.clips.iter()
+        .filter(|clip| clip.caption_metadata().is_some()
+            && track_id.is_none_or(|id| clip.track_id == id))
+        .filter_map(|clip| {
+            let text = clip.text.as_ref()?.content.trim();
+            (!text.is_empty()).then(|| srt::Cue {
+                start: clip.start,
+                end: clip.start + clip.duration,
+                text: text.to_owned(),
+            })
+        })
+        .collect();
+    cues.sort_by(|a, b| a.start.total_cmp(&b.start));
+    cues
 }
 
 #[cfg(test)]
@@ -283,6 +313,96 @@ mod tests {
                 ..CaptionMetadata::default() }),
         }).is_err());
         assert!(editor.project().caption_clip_ids("TL1").is_empty());
+    }
+
+    #[test]
+    fn trimming_a_caption_never_makes_its_identity_disappear() {
+        use crate::commands::TrimEdge;
+        let mut editor = Editor::new();
+        let id = editor.apply(Command::AddCaptionClip {
+            track_id: Some("T1".into()), above: false, start: 0.5,
+            style: Some(TextStyle {
+                content: "Texto".into(), ..TextStyle::default()
+            }), duration: Some(2.0), offset_y: None,
+            metadata: CaptionMetadata {
+                words: vec![CaptionWord {
+                    id: "w1".into(), start: 1.0, end: 1.8
+                }],
+                ..CaptionMetadata::default()
+            },
+        }).unwrap().created_id.unwrap();
+        editor.apply(Command::TrimClip {
+            clip_id: id.clone(), edge: TrimEdge::End, delta: -1.3, ripple: false,
+        }).unwrap();
+        let clip = editor.project().active().clips.iter()
+            .find(|clip| clip.id == id).unwrap();
+        assert!(clip.duration < 1.8);
+        assert!(clip.caption_metadata().is_some(),
+            "classification survives until word timings are adjusted");
+        assert_eq!(editor.project().caption_clip_ids("TL1").len(), 1);
+        let restored = clip.caption_metadata().unwrap();
+        // The duplicator uses AddCaptionClip; even stale clocks must stay
+        // intact until the timing editor can reconcile a shortened clip.
+        editor.apply(Command::AddCaptionClip {
+            track_id: Some("T1".into()), above: false, start: 4.0,
+            style: Some(TextStyle { content: "Texto".into(), ..TextStyle::default() }),
+            duration: Some(0.7), offset_y: None, metadata: restored,
+        }).unwrap();
+        assert_eq!(editor.project().caption_clip_ids("TL1").len(), 2);
+    }
+
+    #[test]
+    fn exporting_only_real_subtitles_excludes_titles_on_same_track() {
+        let mut editor = Editor::new();
+        editor.apply(Command::AddCaptionClip {
+            track_id: Some("T1".into()), above: false, start: 0.5,
+            style: Some(TextStyle { content: "Subtítulo".into(), ..TextStyle::default() }),
+            duration: Some(1.0), offset_y: None,
+            metadata: CaptionMetadata::default(),
+        }).unwrap();
+        editor.apply(Command::AddTextClip {
+            track_id: Some("T1".into()), above: false, start: 3.0,
+            style: Some(TextStyle { content: "Créditos".into(), ..TextStyle::default() }),
+            duration: Some(1.0), offset_y: None,
+        }).unwrap();
+        let cues = caption_cues(editor.project().active(), Some("T1"));
+        assert_eq!(cues.len(), 1);
+        assert_eq!(cues[0].text, "Subtítulo");
+    }
+
+    #[test]
+    fn recognition_and_caption_are_one_undoable_project_operation() {
+        let mut editor = Editor::new();
+        let tx = transcript();
+        let commands = vec![
+            Command::UpsertTranscript { transcript: tx.clone() },
+            Command::AddCaptionClip {
+                track_id: Some("T1".into()), above: false, start: 0.2,
+                style: Some(TextStyle {
+                    content: "Hola mundo".into(), ..TextStyle::default()
+                }), duration: Some(1.0), offset_y: None,
+                metadata: CaptionMetadata {
+                    transcript_id: Some("tx1".into()),
+                    segment_id: Some("seg1".into()),
+                    ..CaptionMetadata::default()
+                },
+            },
+        ];
+        assert!(editor.apply(Command::Batch { commands }).unwrap().applied);
+        assert_eq!(editor.project().transcripts(), vec![tx.clone()]);
+        let captions = editor.project().caption_clip_ids("TL1");
+        assert_eq!(captions.len(), 1);
+        let saved = to_document(&settings(), editor.project());
+        let loaded = from_document(&saved).expect("can reopen");
+        assert_eq!(loaded.transcript("tx1"), Some(tx));
+        let caption = &loaded.active().clips[0];
+        assert_eq!(caption.caption_metadata().unwrap().transcript_id.as_deref(), Some("tx1"));
+        assert_eq!(caption.caption_metadata().unwrap().segment_id.as_deref(), Some("seg1"));
+        assert!(editor.undo());
+        assert!(editor.project().transcripts().is_empty());
+        assert!(editor.project().active().clips.is_empty());
+        assert!(editor.redo());
+        assert_eq!(editor.project().caption_clip_ids("TL1").len(), 1);
     }
 
     #[test]

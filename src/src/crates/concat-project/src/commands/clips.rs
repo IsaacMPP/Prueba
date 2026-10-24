@@ -161,6 +161,36 @@ pub(super) fn apply(
             })
         }
 
+        Command::AddCaptionClip {
+            track_id,
+            above,
+            start,
+            style,
+            duration,
+            offset_y,
+            metadata,
+        } => {
+            // Validate before creating anything; the outer batch can then
+            // atomically save transcripts and create matching captions.
+            let seconds = duration.unwrap_or(DEFAULT_TEXT_DURATION).max(MIN_CLIP_DURATION);
+            if !metadata.valid_for_clip(seconds) {
+                return Err(CommandError::InvalidCaptionMetadata);
+            }
+            let created = apply(
+                project,
+                mint,
+                Command::AddTextClip {
+                    track_id, above, start, style, duration, offset_y,
+                },
+            )?;
+            if let Some(id) = &created.created_id {
+                let clip = project.active_mut().clip_mut(id)
+                    .expect("newly-created title remains on active timeline");
+                clip.set_caption_metadata(Some(metadata));
+            }
+            Ok(created)
+        }
+
         Command::AddShapeClip {
             track_id,
             above,

@@ -20,6 +20,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use concat_project::Command;
+use concat_project::caption_data::{caption_cues, CaptionMetadata, TranscriptDocument, TranscriptSegment};
 use concat_project::model::{ClipKind, TextStyle};
 use concat_project::srt;
 use concat_speech::JobStage;
@@ -80,8 +81,15 @@ pub enum CaptionsMsg {
 /// need it: where it starts on the timeline and how fast it plays.
 #[derive(Clone, Debug)]
 struct Subject {
+    /// Stable identity for saving recognition results with the project.
+    clip_id: String,
+    timeline_id: String,
     start: f64,
     speed: f64,
+    source_start: f64,
+    duration: f64,
+    media_id: String,
+    audio_stream: Option<u32>,
     /// The look chosen when the run began.
     look: (f64, f64),
     /// The transcriber model, and the thirty-second windows whisper reads
@@ -199,28 +207,82 @@ impl CaptionsPane {
                         let Some(subject) = subject else {
                             return;
                         };
+                        // Never create orphan captions if their source clip
+                        // was deleted or the editor switched timelines while
+                        // recognition ran.
+                        let current = studio.clip(&subject.clip_id);
+                        if studio.timeline().id != subject.timeline_id
+                            || current.is_none_or(|clip| {
+                                clip.start != subject.start
+                                    || clip.speed != subject.speed
+                                    || clip.source_start != subject.source_start
+                                    || clip.duration != subject.duration
+                                    || clip.media_id != subject.media_id
+                                    || clip.audio_stream != subject.audio_stream
+                            })
+                        {
+                            self.message = "El clip original cambió durante la transcripción.                                 No se crearon subtítulos desincronizados; vuelve a transcribir."
+                                .into();
+                            return;
+                        }
                         let look = subject.look;
                         let base = studio.prefs.title_style.clone();
-                        let commands: Vec<Command> = segments
-                            .into_iter()
-                            .filter_map(|segment| {
-                                let text = segment.text.trim().to_owned();
-                                (!text.is_empty()).then(|| {
-                                    caption_clip(
-                                        text,
-                                        subject.start + segment.start / subject.speed,
-                                        ((segment.end - segment.start) / subject.speed).max(0.2),
-                                        look,
-                                        base.as_ref(),
-                                    )
-                                })
-                            })
-                            .collect();
+                        // Keep recognition and generated clips together as one
+                        // native undo step. Whisper currently returns phrases,
+                        // not word clocks: never fabricate precise word timing.
+                        // A fresh recognition is a new version, not a
+                        // destructive replacement of an earlier corrected
+                        // transcript or the references on its older captions.
+                        let stem = format!("ejtx:{}:{}", subject.timeline_id, subject.clip_id);
+                        let mut version = 1usize;
+                        let transcript_id = loop {
+                            let candidate = format!("{stem}:{version}");
+                            if studio.project().transcript(&candidate).is_none() {
+                                break candidate;
+                            }
+                            version += 1;
+                        };
+                        let mut saved_segments = Vec::new();
+                        let mut commands = Vec::new();
+                        for (index, segment) in segments.into_iter().enumerate() {
+                            let text = segment.text.trim().to_owned();
+                            if text.is_empty() || !segment.start.is_finite()
+                                || !segment.end.is_finite() || segment.start < 0.0
+                            {
+                                continue;
+                            }
+                            let end = segment.end.max(segment.start + 0.01);
+                            let segment_id = format!("seg{}", index + 1);
+                            saved_segments.push(TranscriptSegment {
+                                id: segment_id.clone(),
+                                text: text.clone(),
+                                start: segment.start,
+                                end,
+                                words: Vec::new(),
+                            });
+                            commands.push(caption_clip(
+                                text,
+                                subject.start + segment.start / subject.speed,
+                                ((end - segment.start) / subject.speed).max(0.2),
+                                look,
+                                base.as_ref(),
+                                Some((&transcript_id, &segment_id)),
+                            ));
+                        }
                         let count = commands.len();
                         self.open = false;
                         if count == 0 {
                             studio.notify(&t("captions.nothingSaidClip"), true);
                         } else {
+                            commands.insert(0, Command::UpsertTranscript {
+                                transcript: TranscriptDocument {
+                                    id: transcript_id,
+                                    timeline_id: subject.timeline_id,
+                                    source_clip_id: subject.clip_id,
+                                    language: String::new(),
+                                    segments: saved_segments,
+                                },
+                            });
                             studio.apply(Command::Batch { commands });
                             studio.notify(&tf("captions.addedCaptions", &[&count]), false);
                         }
@@ -339,7 +401,7 @@ impl CaptionsPane {
             self.message = t("captions.noCaptionsToExport");
             return;
         };
-        let cues = srt::title_cues(studio.timeline(), Some(&lane.track_id));
+        let cues = caption_cues(studio.timeline(), Some(&lane.track_id));
         if let Err(error) = std::fs::write(path, srt::write(&cues)) {
             log::warn!("captions: could not write {}: {error}", path.display());
             self.message = tf("captions.couldNotWriteSubtitles", &[&error]);
@@ -355,7 +417,10 @@ impl CaptionsPane {
         // Which lane was written goes without saying when it was the
         // selected title's, or the only lane with titles; otherwise the
         // notice says it was the busiest, and how to pick another.
-        let busiest = lane.busiest && srt::title_lanes(studio.timeline()) > 1;
+        let busiest = lane.busiest && studio.timeline().tracks.iter()
+            .filter(|track| studio.timeline().clips.iter()
+                .any(|clip| clip.track_id == track.id && clip.caption_metadata().is_some()))
+            .count() > 1;
         let say = move |studio: &mut Studio, place: &str| {
             // Each key spelled out where it is used: scripts/locales.py
             // finds the strings the source asks for by reading it.
@@ -455,7 +520,7 @@ impl CaptionsPane {
         let commands: Vec<Command> = lines
             .into_iter()
             .map(|(text, seconds)| {
-                let command = caption_clip(text, at, seconds, look, base.as_ref());
+                let command = caption_clip(text, at, seconds, look, base.as_ref(), None);
                 at += seconds;
                 command
             })
@@ -519,8 +584,14 @@ impl CaptionsPane {
             (Stage::Working, windows * per_window),
         ]);
         self.subject = Some(Subject {
+            clip_id: clip.id.clone(),
+            timeline_id: studio.timeline().id.clone(),
             start: clip.start,
             speed: clip.speed,
+            source_start: clip.source_start,
+            duration: clip.duration,
+            media_id: clip.media_id.clone(),
+            audio_stream: clip.audio_stream,
             look: self.look(),
             model,
             windows,
@@ -594,6 +665,7 @@ fn srt_commands(cues: Vec<srt::Cue>, look: (f64, f64), base: Option<&TextStyle>)
                 cue.end - cue.start,
                 look,
                 base,
+                None,
             )
         })
         .collect()
@@ -606,27 +678,25 @@ struct ExportLane {
     busiest: bool,
 }
 
-/// The lane whose titles are written out as captions: the selected
-/// title's; or with no title selected, the lane with the most titles -
-/// captions come many to a lane, a title card one or two, and nothing
-/// else in the document tells them apart (see `srt::busiest_title_lane`).
-/// None when the timeline has no title.
+/// Select only lanes carrying explicitly identified subtitles. A selected
+/// ordinary title must never make credits or headings appear in an SRT.
 fn export_lane(studio: &Studio) -> Option<ExportLane> {
+    let timeline = studio.timeline();
     let selected = studio
         .sole_selection()
         .and_then(|id| studio.clip(&id))
-        .filter(|clip| clip.kind == ClipKind::Text)
+        .filter(|clip| clip.caption_metadata().is_some())
         .map(|clip| clip.track_id.clone());
-    match selected {
-        Some(track_id) => Some(ExportLane {
-            track_id,
-            busiest: false,
-        }),
-        None => srt::busiest_title_lane(studio.timeline()).map(|track_id| ExportLane {
-            track_id,
-            busiest: true,
-        }),
+    if let Some(track_id) = selected {
+        return Some(ExportLane { track_id, busiest: false });
     }
+    let track_id = timeline.tracks.iter().filter_map(|track| {
+        let count = timeline.clips.iter()
+            .filter(|clip| clip.track_id == track.id && clip.caption_metadata().is_some())
+            .count();
+        (count > 0).then_some((track.id.clone(), count))
+    }).max_by_key(|(_, count)| *count).map(|(id, _)| id)?;
+    Some(ExportLane { track_id, busiest: true })
 }
 
 /// The name an export is offered under: the project's, as one file name,
@@ -743,6 +813,7 @@ fn caption_clip(
     duration: f64,
     look: (f64, f64),
     base: Option<&TextStyle>,
+    origin: Option<(&str, &str)>,
 ) -> Command {
     let (offset_y, font_size) = look;
     // The kept look where there is one - family, weight, colours, stroke,
@@ -764,13 +835,18 @@ fn caption_clip(
             ..TextStyle::default()
         },
     };
-    Command::AddTextClip {
+    Command::AddCaptionClip {
         track_id: None,
         above: true,
         start,
         style: Some(style),
         duration: Some(duration),
         offset_y: Some(offset_y),
+        metadata: CaptionMetadata {
+            transcript_id: origin.map(|(id, _)| id.to_owned()),
+            segment_id: origin.map(|(_, id)| id.to_owned()),
+            ..CaptionMetadata::default()
+        },
     }
 }
 
