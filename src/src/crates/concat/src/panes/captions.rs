@@ -29,6 +29,7 @@ use concat_speech::transcribe::Segment;
 use crate::host::{on_ui_in_project, spawn_in_project};
 use crate::i18n::{t, tf};
 use crate::panes::Msg;
+use crate::panes::caption_editor::{CaptionEditor, Navigation};
 use crate::panes::pace::{Pace, Stage, Timings};
 use crate::panes::settings::installed;
 use crate::studio::Studio;
@@ -75,6 +76,14 @@ pub enum CaptionsMsg {
     ExportSrt,
     /// Where they go.
     ExportSrtTo(PathBuf),
+    /// Fase 3: switching pages or rows must never lose an unsaved draft.
+    EditorTab(i32),
+    EditorKind(i32),
+    EditorSelect(i32),
+    EditorText(String),
+    EditorApply,
+    EditorDiscard,
+    EditorStay,
 }
 
 /// The clip a transcription is running over, as the finished segments
@@ -132,6 +141,8 @@ pub struct CaptionsPane {
     pub pace: Pace,
     /// Why the last run failed, when it did.
     pub message: String,
+    /// Draft phrase editing is isolated from the Whisper generator.
+    pub editor: CaptionEditor,
     /// The clip under the running transcription.
     subject: Option<Subject>,
     /// How long each model took this session, for the next run's bar.
@@ -151,7 +162,11 @@ impl CaptionsPane {
                 self.open_on(studio, selected, false);
             }
             CaptionsMsg::OpenOnClip(id) => self.open_on(studio, Some(id), true),
-            CaptionsMsg::Close => self.open = false,
+            CaptionsMsg::Close => {
+                if self.editor.navigate(studio, Navigation::Close) {
+                    self.open = false;
+                }
+            },
             CaptionsMsg::VoiceToggled(on) => {
                 self.from_voice = on;
                 self.message.clear();
@@ -313,6 +328,42 @@ impl CaptionsPane {
             CaptionsMsg::ImportSrtFrom(path) => self.import_srt(studio, &path),
             CaptionsMsg::ExportSrt => self.ask_export_srt(studio),
             CaptionsMsg::ExportSrtTo(path) => self.export_srt(studio, &path),
+            CaptionsMsg::EditorTab(index) => {
+                if self.editor.navigate(studio, Navigation::Tab(index.clamp(0, 1) as u8)) {
+                    self.open = false;
+                }
+            }
+            CaptionsMsg::EditorKind(index) => {
+                if self.editor.navigate(studio, Navigation::Kind(index.clamp(0, 1) as u8)) {
+                    self.open = false;
+                }
+            }
+            CaptionsMsg::EditorSelect(index) => {
+                if let Some(entry) = usize::try_from(index).ok()
+                    .and_then(|i| self.editor.entries(studio).into_iter().nth(i))
+                {
+                    self.editor.navigate(studio, Navigation::Select(entry.target));
+                }
+            }
+            CaptionsMsg::EditorText(text) => self.editor.draft = text,
+            CaptionsMsg::EditorApply => {
+                if self.editor.pending.is_some() {
+                    if self.editor.resolve(studio, true) { self.open = false; }
+                } else {
+                    self.editor.apply(studio);
+                }
+            }
+            CaptionsMsg::EditorDiscard => {
+                if self.editor.pending.is_some() {
+                    if self.editor.resolve(studio, false) { self.open = false; }
+                } else {
+                    self.editor.discard();
+                }
+            }
+            CaptionsMsg::EditorStay => {
+                self.editor.pending = None;
+                self.editor.message.clear();
+            }
         }
     }
 
@@ -471,8 +522,12 @@ impl CaptionsPane {
                 .then(|| sources.first().map(|source| source.id.clone()))
                 .flatten()
         });
+        // Reopening does not silently discard a draft; the explicit close
+        // confirmation owns that choice.
+        let editor = std::mem::take(&mut self.editor);
         *self = CaptionsPane {
             open: true,
+            editor,
             from_voice,
             clip,
             chosen_with: studio.sole_selection(),
@@ -626,7 +681,18 @@ impl CaptionsPane {
             .into_iter()
             .map(|source| source.label.into())
             .collect();
+        let entries = self.editor.entries(studio);
+        let edit_labels: Vec<slint::SharedString> = entries.iter()
+            .map(|entry| entry.label.as_str().into()).collect();
         CaptionsSheetData {
+            editor_tab: self.editor.tab as i32,
+            editor_kind: self.editor.kind as i32,
+            editor_items: std::rc::Rc::new(slint::VecModel::from(edit_labels)).into(),
+            editor_selected: self.editor.selected_index(studio),
+            editor_text: self.editor.draft.as_str().into(),
+            editor_dirty: self.editor.dirty(),
+            editor_confirm: self.editor.pending.is_some(),
+            editor_message: self.editor.message.as_str().into(),
             open: self.open,
             from_voice: self.from_voice,
             sources: std::rc::Rc::new(slint::VecModel::from(labels)).into(),
