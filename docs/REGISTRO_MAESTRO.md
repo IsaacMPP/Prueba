@@ -14,6 +14,8 @@
 
 **Decisión sobre versión móvil — 24 oct 2026:** **POSPUESTA**. El usuario decidió terminar y estabilizar **Estudio Joven PC/Windows** antes de iniciar cualquier compilación/adaptación Android. Aunque la base original tiene `concat-android` y componentes de interfaz móvil, **no comenzar APK, rama ni CI Android hasta cumplir estabilidad funcional en PC y recibir autorización nueva del usuario**. No constituye compromiso EJ-039; **se mantienen exactamente EJ-001 a EJ-038**.
 
+**Identidad del producto y prioridades (24 oct 2026):** nombre público final del editor = **JA Video Studio**. El identificador técnico histórico `Estudio Joven` se conserva mientras se estabiliza Windows; **no ejecutar renombrado de código, instaladores ni proyectos todavía**. **Estudio Joven Connect** será el sistema futuro de procesamiento remoto privado PC ↔ móvil, **diferido hasta que el editor Windows sea estable y el usuario autorice trabajar en móvil**. Visión a largo plazo: una **Suite**, sin productos adicionales definidos ni desarrollos paralelos. Ningún nombre cambia los **38 compromisos EJ-001 a EJ-038**. No tocar `main`, inspector Texto original ni fusionar PR #9 sin autorización.
+
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |

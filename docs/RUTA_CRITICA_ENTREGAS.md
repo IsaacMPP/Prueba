@@ -2,6 +2,8 @@
 
 **Fecha de decisión:** 24 de octubre de 2026. La prioridad es una aplicación útil y comprobable, no la cantidad de funciones implementadas. Este plan coordina el registro maestro; no reemplaza sus 38 criterios.
 
+**Nombre y estrategia de producto vigentes (24 oct 2026):** **JA Video Studio** será el nombre público final del editor para PC. **Estudio Joven Connect** designa la futura función de comunicación y procesamiento entre una PC que actúa como servidor privado y clientes móviles. El usuario desea construir una **Suite** posteriormente, pero **primero exige terminar y estabilizar el editor de video Windows**; Android/Connect y otras apps solo tras autorización expresa. No renombrar paquetes, rutas, proyectos ni instaladores durante Fase 3C; planificar migración cuando corresponda y preservar los 38 compromisos.
+
 ## Orden de construcción y condiciones de paso
 
 **Decisión vinculante 24 oct 2026 — versión móvil diferida:** completar, estabilizar y validar la versión PC/Windows en todas las puertas relevantes de esta ruta antes de iniciar trabajo Android. **Requiere autorización expresa del usuario cuando la versión PC esté estable y funcional.** No iniciar APK, CI Android ni rama móvil por ahora. La evaluación de la base Concat Android queda como antecedente de factibilidad, no como entrega. No agregar a los 38 pendientes ni fusionar PR sin autorización.

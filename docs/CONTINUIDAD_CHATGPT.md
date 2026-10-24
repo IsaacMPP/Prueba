@@ -1,5 +1,18 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## IDENTIDAD DEFINITIVA Y ALCANCE — JA VIDEO STUDIO (24 OCT 2026)
+
+**Decisión explícita del usuario:** el nombre **final y público del editor de video** será **JA Video Studio**. El nombre técnico/de trabajo histórico `Estudio Joven` y las rutas, paquetes, ramas y documentos existentes pueden mantenerse **temporalmente** para evitar cambios disruptivos durante la estabilización. **No renombrar todavía el código fuente, paquetes, identificadores, instaladores o rutas de datos sin planificación y autorización explícita**, con migración de proyectos, compatibilidad y pruebas.
+
+**Estudio Joven Connect** es el nombre del sistema/concepto futuro de conexión PC ↔ dispositivos móviles: el equipo Windows podría procesar localmente transcripciones y otras tareas pesadas para dispositivos autorizados, devolviendo resultados editables. **No es el nombre final de la aplicación** ni debe añadirse a esta fase. Requiere diseño de seguridad, autenticación, transferencia de audio, enrutamiento de trabajos y compatibilidad, solo cuando se retome móvil.
+
+**Visión posterior:** crear una **Suite** de herramientas relacionadas; por ahora **no definir productos nuevos, ni abrir líneas de desarrollo, ni decidir el nombre comercial de la Suite**. Prioridad exclusiva: finalizar **JA Video Studio para Windows**, completar las funciones pendientes, superar CI y las pruebas reales, asegurar instalación/guardado/exportación/rendimiento y estabilizar. **Solo entonces**, con autorización del usuario, abordar la versión móvil/Connect y, más adelante, otros productos de la Suite.
+
+**Alcance actual invariable:** continuar la Fase 3C PC y su validación; mantener los 38 compromisos EJ-001 a EJ-038, el inspector Texto original, la rama activa y PR #9 en borrador. No tocar `main`, no fusionar PR y no iniciar Android o Connect prematuramente.
+
+---
+
+
 ## DECISIÓN VIGENTE — ANDROID / VERSIÓN MÓVIL SE POSPONE (24 OCT 2026)
 
 **Decisión explícita del usuario:** no implementar ni compilar una APK de Estudio Joven por ahora. **Primero concluir, estabilizar y probar funcionalmente Estudio Joven para PC/Windows**: subtítulos, edición, karaoke cuando corresponda, guardado/reapertura, exportación, rendimiento y el resto de compromisos priorizados. **Solo cuando la versión PC esté estable y funcional y el usuario autorice expresamente retomar móvil**, iniciaremos la adaptación y validación Android. No iniciar ramas móviles, CI Android, APK ni nuevos compromisos de desarrollo en este momento.
