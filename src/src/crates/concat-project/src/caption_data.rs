@@ -286,6 +286,41 @@ mod tests {
     }
 
     #[test]
+    fn recognition_and_caption_are_one_undoable_project_operation() {
+        let mut editor = Editor::new();
+        let tx = transcript();
+        let commands = vec![
+            Command::UpsertTranscript { transcript: tx.clone() },
+            Command::AddCaptionClip {
+                track_id: Some("T1".into()), above: false, start: 0.2,
+                style: Some(TextStyle {
+                    content: "Hola mundo".into(), ..TextStyle::default()
+                }), duration: Some(1.0), offset_y: None,
+                metadata: CaptionMetadata {
+                    transcript_id: Some("tx1".into()),
+                    segment_id: Some("seg1".into()),
+                    ..CaptionMetadata::default()
+                },
+            },
+        ];
+        assert!(editor.apply(Command::Batch { commands }).unwrap().applied);
+        assert_eq!(editor.project().transcripts(), vec![tx.clone()]);
+        let captions = editor.project().caption_clip_ids("TL1");
+        assert_eq!(captions.len(), 1);
+        let saved = to_document(&settings(), editor.project());
+        let loaded = from_document(&saved).expect("can reopen");
+        assert_eq!(loaded.transcript("tx1"), Some(tx));
+        let caption = &loaded.active().clips[0];
+        assert_eq!(caption.caption_metadata().unwrap().transcript_id.as_deref(), Some("tx1"));
+        assert_eq!(caption.caption_metadata().unwrap().segment_id.as_deref(), Some("seg1"));
+        assert!(editor.undo());
+        assert!(editor.project().transcripts().is_empty());
+        assert!(editor.project().active().clips.is_empty());
+        assert!(editor.redo());
+        assert_eq!(editor.project().caption_clip_ids("TL1").len(), 1);
+    }
+
+    #[test]
     fn invalid_timing_never_changes_project() {
         let mut editor = Editor::new();
         let mut tx = transcript();
