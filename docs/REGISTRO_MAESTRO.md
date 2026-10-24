@@ -1,16 +1,16 @@
 # Estudio Joven — Registro maestro de 37 compromisos
 
-**Actualizado:** 23 de octubre de 2026. **Fuente de verdad para las siguientes fases.**
+**Actualizado:** 23 de octubre de 2026 (Fase 2, primer incremento). **Fuente de verdad para las siguientes fases.**
 
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |
 |---|---|---|---|---|---|
 | EJ-001 | Rust/Slint versionado, sin scripts de parcheo | P0 | En validación | F1 | CI nativo y smoke Windows exitosos |
-| EJ-002 | Transcripción persistente con IDs estables | P0 | Pendiente | F2 | Guardar/cerrar/abrir conserva texto y tiempos |
-| EJ-003 | Identificar subtítulos, separados de títulos/créditos | P0 | Pendiente | F2 | Lotes/SRT excluyen títulos normales |
-| EJ-004 | Modo independiente por subtítulo | P0 | Prototipo previo | F2–F4 | A/B/A y reapertura sin cambios cruzados |
-| EJ-005 | Palabras temporizadas y estado de alineación | P0 | Prototipo previo | F2–F4 | Tiempos guardados, revisables y corregibles |
+| EJ-002 | Transcripción persistente con IDs estables | P0 | Modelo Rust implementado; CI pendiente; sin conexión a Whisper | F2 | Guardar/cerrar/abrir conserva texto y tiempos |
+| EJ-003 | Identificar subtítulos, separados de títulos/créditos | P0 | Metadatos Rust implementados; UI y SRT pendientes | F2 | Lotes/SRT excluyen títulos normales |
+| EJ-004 | Modo independiente por subtítulo | P0 | Modelo Rust implementado; render karaoke/UI pendientes | F2–F4 | A/B/A y reapertura sin cambios cruzados |
+| EJ-005 | Palabras temporizadas y estado de alineación | P0 | Tiempos tipados en modelo; edición y alineación pendientes | F2–F4 | Tiempos guardados, revisables y corregibles |
 | EJ-006 | Resaltado de fila seleccionada | P0 | Pendiente | F3 | Selección visible en ambas listas |
 | EJ-007 | Sincronía panel ↔ línea de tiempo | P0 | Prototipo previo | F3 | Selección bidireccional con el clip exacto |
 | EJ-008 | Aplicar/Descartar/cambios pendientes | P0 | Pendiente | F3 | No perder borradores al navegar |
