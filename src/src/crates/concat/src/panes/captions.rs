@@ -20,6 +20,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use concat_project::Command;
+use concat_project::caption_data::{CaptionMetadata, TranscriptDocument, TranscriptSegment};
 use concat_project::model::{ClipKind, TextStyle};
 use concat_project::srt;
 use concat_speech::JobStage;
@@ -80,6 +81,9 @@ pub enum CaptionsMsg {
 /// need it: where it starts on the timeline and how fast it plays.
 #[derive(Clone, Debug)]
 struct Subject {
+    /// Stable identity for saving recognition results with the project.
+    clip_id: String,
+    timeline_id: String,
     start: f64,
     speed: f64,
     /// The look chosen when the run began.
@@ -201,26 +205,51 @@ impl CaptionsPane {
                         };
                         let look = subject.look;
                         let base = studio.prefs.title_style.clone();
-                        let commands: Vec<Command> = segments
-                            .into_iter()
-                            .filter_map(|segment| {
-                                let text = segment.text.trim().to_owned();
-                                (!text.is_empty()).then(|| {
-                                    caption_clip(
-                                        text,
-                                        subject.start + segment.start / subject.speed,
-                                        ((segment.end - segment.start) / subject.speed).max(0.2),
-                                        look,
-                                        base.as_ref(),
-                                    )
-                                })
-                            })
-                            .collect();
+                        // Keep recognition and generated clips together as one
+                        // native undo step. Whisper currently returns phrases,
+                        // not word clocks: never fabricate precise word timing.
+                        let transcript_id = format!("ejtx:{}:{}", subject.timeline_id, subject.clip_id);
+                        let mut saved_segments = Vec::new();
+                        let mut commands = Vec::new();
+                        for (index, segment) in segments.into_iter().enumerate() {
+                            let text = segment.text.trim().to_owned();
+                            if text.is_empty() || !segment.start.is_finite()
+                                || !segment.end.is_finite() || segment.start < 0.0
+                            {
+                                continue;
+                            }
+                            let end = segment.end.max(segment.start + 0.01);
+                            let segment_id = format!("seg{}", index + 1);
+                            saved_segments.push(TranscriptSegment {
+                                id: segment_id.clone(),
+                                text: text.clone(),
+                                start: segment.start,
+                                end,
+                                words: Vec::new(),
+                            });
+                            commands.push(caption_clip(
+                                text,
+                                subject.start + segment.start / subject.speed,
+                                ((end - segment.start) / subject.speed).max(0.2),
+                                look,
+                                base.as_ref(),
+                                Some((&transcript_id, &segment_id)),
+                            ));
+                        }
                         let count = commands.len();
                         self.open = false;
                         if count == 0 {
                             studio.notify(&t("captions.nothingSaidClip"), true);
                         } else {
+                            commands.insert(0, Command::UpsertTranscript {
+                                transcript: TranscriptDocument {
+                                    id: transcript_id,
+                                    timeline_id: subject.timeline_id,
+                                    source_clip_id: subject.clip_id,
+                                    language: String::new(),
+                                    segments: saved_segments,
+                                },
+                            });
                             studio.apply(Command::Batch { commands });
                             studio.notify(&tf("captions.addedCaptions", &[&count]), false);
                         }
@@ -455,7 +484,7 @@ impl CaptionsPane {
         let commands: Vec<Command> = lines
             .into_iter()
             .map(|(text, seconds)| {
-                let command = caption_clip(text, at, seconds, look, base.as_ref());
+                let command = caption_clip(text, at, seconds, look, base.as_ref(), None);
                 at += seconds;
                 command
             })
@@ -519,6 +548,8 @@ impl CaptionsPane {
             (Stage::Working, windows * per_window),
         ]);
         self.subject = Some(Subject {
+            clip_id: clip.id.clone(),
+            timeline_id: studio.timeline().id.clone(),
             start: clip.start,
             speed: clip.speed,
             look: self.look(),
@@ -594,6 +625,7 @@ fn srt_commands(cues: Vec<srt::Cue>, look: (f64, f64), base: Option<&TextStyle>)
                 cue.end - cue.start,
                 look,
                 base,
+                None,
             )
         })
         .collect()
@@ -743,6 +775,7 @@ fn caption_clip(
     duration: f64,
     look: (f64, f64),
     base: Option<&TextStyle>,
+    origin: Option<(&str, &str)>,
 ) -> Command {
     let (offset_y, font_size) = look;
     // The kept look where there is one - family, weight, colours, stroke,
@@ -764,13 +797,18 @@ fn caption_clip(
             ..TextStyle::default()
         },
     };
-    Command::AddTextClip {
+    Command::AddCaptionClip {
         track_id: None,
         above: true,
         start,
         style: Some(style),
         duration: Some(duration),
         offset_y: Some(offset_y),
+        metadata: CaptionMetadata {
+            transcript_id: origin.map(|(id, _)| id.to_owned()),
+            segment_id: origin.map(|(_, id)| id.to_owned()),
+            ..CaptionMetadata::default()
+        },
     }
 }
 
