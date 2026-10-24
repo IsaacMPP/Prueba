@@ -1,6 +1,16 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
-## ALERTA VIGENTE — ERROR REAL DE COMPILACIÓN EN FASE 3 (24 OCT 2026)
+## ACTUALIZACIÓN MÁS RECIENTE — CORRECCIÓN APLICADA, VALIDACIÓN EN CURSO (24 OCT 2026)
+
+- **Rama:** `feature/fase3-editor-transcripcion-subtitulos`. **Código corregido:** [commit `ded75c8`](https://github.com/IsaacMPP/Prueba/commit/ded75c8d675788dc3c60ba59337e2f72962afd05). Se editaron **solo ocho separadores** `;` → `,` en las líneas 61–68 de `src/src/crates/concat/ui/dialogs/captions.slint`, dentro de `CaptionsSheetData`.
+- **Única compilación iniciada con esta corrección:** [GitHub Actions #40116367423](https://github.com/IsaacMPP/Prueba/actions/runs/40116367423), estado observado: **in_progress**. **Resultado final aún no comprobado**; no afirmar que Slint ni el instalador aprobaron antes de leer el resultado del workflow.
+- La ejecución anterior [#40112515736](https://github.com/IsaacMPP/Prueba/actions/runs/40112515736) sí falló por sintaxis Slint; sus 171 pruebas Rust pasaron. La sección histórica de abajo describe ese fallo **antes** de la corrección.
+- **Próxima acción obligatoria:** consultar el resultado y log de #40116367423. Si falla, diagnosticar el primer error nuevo en la fuente antes de realizar otro cambio; **no relanzar la compilación a ciegas**. Si pasa, seguir con pruebas manuales Windows y los pendientes de Fase 3, sin declararla completada por CI solo.
+- Los **38 compromisos EJ-001 a EJ-038** siguen vigentes. No tocar el inspector **Texto original**, no modificar `main`, ni fusionar **PR #9** (borrador) sin autorización. Este commit de documentación no contiene archivos bajo `src/**` y no debería disparar una segunda compilación en el workflow configurado.
+
+---
+
+## HISTORIAL — ERROR REAL DETECTADO ANTES DE LA CORRECCIÓN (24 OCT 2026)
 
 **PRIORIDAD ABSOLUTA DEL PRÓXIMO CHAT: corregir el error en Slint, sin agregar funciones nuevas ni modificar main.**
 
