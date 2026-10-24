@@ -1,5 +1,20 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## FASE 3C — SEGMENTACIÓN CONFIGURABLE IMPLEMENTADA, VALIDACIÓN EN CURSO (24 OCT 2026)
+
+**Código integrado:** [commit 67d70c2](https://github.com/IsaacMPP/Prueba/commit/67d70c20f614b572ed6af400158c8b9288025d1c), rama `feature/fase3-editor-transcripcion-subtitulos`, PR #9 sigue draft y `main` intacta. El usuario confirmó manualmente las dos correcciones F3B (selección y barra). CI F3B [#40123969756](https://github.com/IsaacMPP/Prueba/actions/runs/40123969756) **success**.
+
+**Implementado en fuente, todavía sin validación Windows F3C:** motor nativo independiente `src/src/crates/concat/src/panes/caption_segmentation.rs` con tests Rust; conexión en `panes/captions.rs` y `panes/mod.rs`; controles Slint en `ui/dialogs/captions.slint` y cables `ui/app.slint`, `src/lib.rs`. Reglas: una/dos líneas o una palabra, caracteres máximos por línea (42 por defecto), máximo de palabras (12), duración mínima orientativa (0.7s), máxima (6.0s) y separación en frames (0 por defecto). Se subdivide cada intervalo de Whisper conservando todas las palabras; cada subtítulo tiene ID de segmento y comando de lote deshacible. No se modificó el inspector Texto original.
+
+**Validación:** [Actions #40130405239](https://github.com/IsaacMPP/Prueba/actions/runs/40130405239) evalúa **el commit integrado** `67d70c2`, observado `pending` inicialmente. [#40129996254](https://github.com/IsaacMPP/Prueba/actions/runs/40129996254) comenzó tras el commit del módulo aislado `4271eb9` y **no valida la integración**; se lanzó antes de agrupar los cambios. No generar nuevas ejecuciones hasta analizar #40130405239; si falla, revisar el primer error real.
+
+**Límites pendientes:** tiempo individual por palabra **no es real**: el motor estima los cortes proporcionalmente dentro de los segmentos con tiempo conocido de Whisper; nunca inventar precisión, extender fuera del audio ni truncar palabras. Mínimo de duración orientativo si los límites de longitud lo impiden; palabras larguísimas sin espacios permanecen completas. Ajustes se retienen al reabrir panel en la misma sesión, no se guardan aún como preset de proyecto. Karaoke real F4, regenerar subtítulos existentes, división/unión manual, edición exacta de tiempos y comparación de preview/export pendientes.
+
+**Próximas comprobaciones:** CI Rust y Slint, build Windows, smoke/instalador; después video real español, límites de dos líneas/caracteres, modo palabra vs karaoke (son conceptos distintos), selección/corrección por ID, Undo/Redo, guardar/reabrir y SRT. Los **38 compromisos** permanecen abiertos conforme a cada criterio, sin declarar la Fase 3 cerrada.
+
+---
+
+
 ## FASE 3B — IMPLEMENTACIÓN DE CORRECCIONES VISUALES (24 OCT 2026)
 
 **Autorización:** el usuario pidió «procede» después de aprobar dos correcciones aisladas: selección por recuadro visible mientras se arrastra y barra de progreso que corresponda al porcentaje mostrado. Los IDs involucrados son **EJ-012** (resaltado en la línea de tiempo) y **EJ-029** (presentación de progreso de transcripción); el resaltado de las filas del editor **EJ-006** continúa pendiente.
