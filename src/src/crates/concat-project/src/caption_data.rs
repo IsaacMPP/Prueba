@@ -142,11 +142,12 @@ impl CaptionMetadata {
         true
     }
 
-    /// New metadata must fit the clip; existing metadata remains readable
-    /// after trimming so subtitle classification cannot disappear silently.
+    /// Editing or duplicating a trimmed clip must preserve its identity and
+    /// word clocks until the dedicated timing editor realigns them. Reject
+    /// non-finite or nonpositive clip spans; do not silently discard clocks
+    /// whose ends extend beyond a newly trimmed clip.
     pub fn valid_for_clip(&self, duration: f64) -> bool {
         self.valid() && duration.is_finite() && duration > 0.0
-            && self.words.iter().all(|word| word.end <= duration + 0.000001)
     }
 }
 
@@ -339,6 +340,15 @@ mod tests {
         assert!(clip.caption_metadata().is_some(),
             "classification survives until word timings are adjusted");
         assert_eq!(editor.project().caption_clip_ids("TL1").len(), 1);
+        let restored = clip.caption_metadata().unwrap();
+        // The duplicator uses AddCaptionClip; even stale clocks must stay
+        // intact until the timing editor can reconcile a shortened clip.
+        editor.apply(Command::AddCaptionClip {
+            track_id: Some("T1".into()), above: false, start: 4.0,
+            style: Some(TextStyle { content: "Texto".into(), ..TextStyle::default() }),
+            duration: Some(0.7), offset_y: None, metadata: restored,
+        }).unwrap();
+        assert_eq!(editor.project().caption_clip_ids("TL1").len(), 2);
     }
 
     #[test]
