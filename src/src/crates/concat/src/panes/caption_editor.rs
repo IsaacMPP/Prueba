@@ -89,8 +89,20 @@ impl CaptionEditor {
     }
 
     pub fn ensure_selection(&mut self, studio: &mut Studio) {
-        if self.tab != 1 || self.selected_index(studio) >= 0 {
-            return;
+        if self.tab != 1 { return; }
+        // The original inspector, Undo/Redo or a reopened document may
+        // change the stored phrase outside this editor. Refresh a clean
+        // draft rather than retaining an outdated version of that text.
+        if !self.dirty() {
+            if let Some(entry) = self.entries(studio).into_iter()
+                .find(|entry| Some(&entry.target) == self.selected.as_ref())
+            {
+                if self.original != entry.content {
+                    self.original = entry.content.clone();
+                    self.draft = entry.content;
+                }
+                return;
+            }
         }
         self.selected = None;
         self.draft.clear();
@@ -137,6 +149,7 @@ impl CaptionEditor {
                 self.ensure_selection(studio);
             }
             Navigation::Select(target) => {
+                if self.selected.as_ref() == Some(&target) { return false; }
                 let match_entry = self.entries(studio).into_iter()
                     .find(|entry| entry.target == target);
                 if let Some(entry) = match_entry { self.commit_target(studio, entry); }
@@ -167,9 +180,21 @@ impl CaptionEditor {
         self.message.clear();
     }
 
-    pub fn discard(&mut self) {
-        self.draft = self.original.clone();
-        self.message.clear();
+    pub fn discard(&mut self, studio: &Studio) {
+        // Discard follows the current project, not an old snapshot from
+        // before an Undo/Redo or an edit in Concat's original inspector.
+        if let Some(entry) = self.entries(studio).into_iter()
+            .find(|entry| Some(&entry.target) == self.selected.as_ref())
+        {
+            self.original = entry.content.clone();
+            self.draft = entry.content;
+            self.message.clear();
+        } else {
+            self.selected = None;
+            self.original.clear();
+            self.draft.clear();
+            self.message = "La frase ya no está disponible en este proyecto.".into();
+        }
     }
 
     pub fn apply(&mut self, studio: &mut Studio) -> bool {
@@ -244,6 +269,24 @@ impl CaptionEditor {
             }
         }
         studio.apply(Command::Batch { commands });
+        // Studio::apply returns None for an ordinary edit even when it
+        // succeeds, so verify its actual persisted postcondition instead
+        // of treating None as failure or assuming every command applied.
+        let saved = match self.selected.as_ref() {
+            Some(Target::Caption { clip_id }) => studio.clip(clip_id)
+                .and_then(|clip| clip.text.as_ref())
+                .is_some_and(|style| style.content == next_text),
+            Some(Target::Segment { transcript_id, segment_id }) => studio.project()
+                .transcript(transcript_id)
+                .and_then(|tx| tx.segments.into_iter()
+                    .find(|segment| segment.id == *segment_id))
+                .is_some_and(|segment| segment.text == next_text),
+            None => false,
+        };
+        if !saved {
+            self.message = "No se pudieron aplicar los cambios. El borrador sigue intacto.".into();
+            return false;
+        }
         self.original = next_text.clone();
         self.draft = next_text;
         self.message.clear();
