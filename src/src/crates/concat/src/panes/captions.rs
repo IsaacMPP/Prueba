@@ -357,7 +357,7 @@ impl CaptionsPane {
                 if self.editor.pending.is_some() {
                     if self.editor.resolve(studio, false) { self.open = false; }
                 } else {
-                    self.editor.discard();
+                    self.editor.discard(studio);
                 }
             }
             CaptionsMsg::EditorStay => {
