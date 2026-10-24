@@ -8163,8 +8163,19 @@ impl Studio {
         gesture: Option<&str>,
     ) -> Option<String> {
         if source.kind == model::ClipKind::Text {
-            return self.apply_in(
-                gesture,
+            // A copied subtitle remains a subtitle with its own stored
+            // presentation and clocks; ordinary titles remain ordinary.
+            let command = if let Some(metadata) = source.caption_metadata() {
+                Command::AddCaptionClip {
+                    above: false,
+                    track_id: Some(track_id.to_owned()),
+                    start,
+                    style: source.text.clone(),
+                    duration: Some(source.duration),
+                    offset_y: Some(source.offset_y),
+                    metadata,
+                }
+            } else {
                 Command::AddTextClip {
                     above: false,
                     track_id: Some(track_id.to_owned()),
@@ -8172,8 +8183,9 @@ impl Studio {
                     style: source.text.clone(),
                     duration: Some(source.duration),
                     offset_y: Some(source.offset_y),
-                },
-            );
+                }
+            };
+            return self.apply_in(gesture, command);
         }
         if source.kind == model::ClipKind::Shape {
             return self.apply_in(
