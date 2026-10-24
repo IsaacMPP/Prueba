@@ -945,12 +945,13 @@ mod tests {
             start: 0.5, end: 1.5, text: "Subtítulo".into(),
         }], (0.35, 0.04), None);
         editor.apply(concat_project::Command::Batch { commands: captions }).unwrap();
+        let caption_track = editor.project().active().clips[0].track_id.clone();
         editor.apply(concat_project::Command::AddTextClip {
-            track_id: Some("T1".into()), above: false, start: 3.0,
+            track_id: Some(caption_track.clone()), above: false, start: 3.0,
             style: Some(TextStyle { content: "Créditos".into(), ..TextStyle::default() }),
             duration: Some(2.0), offset_y: None,
         }).unwrap();
-        let cues = super::caption_cues(editor.project().active(), Some("T1"));
+        let cues = super::caption_cues(editor.project().active(), Some(&caption_track));
         assert_eq!(cues.len(), 1);
         assert_eq!(cues[0].text, "Subtítulo");
         assert_eq!(editor.project().caption_clip_ids("TL1").len(), 1);
