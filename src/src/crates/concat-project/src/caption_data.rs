@@ -6,7 +6,8 @@
 use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_value, to_value};
-use crate::model::{Clip, ClipKind, Project};
+use crate::model::{Clip, ClipKind, Project, Timeline};
+use crate::srt;
 
 const TRANSCRIPTS: &str = "estudioJovenTranscripts";
 const CAPTION: &str = "estudioJovenCaption";
@@ -197,6 +198,24 @@ impl Project {
     }
 }
 
+/// Export only explicitly identified subtitle clips, never regular titles.
+pub fn caption_cues(timeline: &Timeline, track_id: Option<&str>) -> Vec<srt::Cue> {
+    let mut cues: Vec<srt::Cue> = timeline.clips.iter()
+        .filter(|clip| clip.caption_metadata().is_some()
+            && track_id.is_none_or(|id| clip.track_id == id))
+        .filter_map(|clip| {
+            let text = clip.text.as_ref()?.content.trim();
+            (!text.is_empty()).then(|| srt::Cue {
+                start: clip.start,
+                end: clip.start + clip.duration,
+                text: text.to_owned(),
+            })
+        })
+        .collect();
+    cues.sort_by(|a, b| a.start.total_cmp(&b.start));
+    cues
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -283,6 +302,25 @@ mod tests {
                 ..CaptionMetadata::default() }),
         }).is_err());
         assert!(editor.project().caption_clip_ids("TL1").is_empty());
+    }
+
+    #[test]
+    fn exporting_only_real_subtitles_excludes_titles_on_same_track() {
+        let mut editor = Editor::new();
+        editor.apply(Command::AddCaptionClip {
+            track_id: Some("T1".into()), above: false, start: 0.5,
+            style: Some(TextStyle { content: "Subtítulo".into(), ..TextStyle::default() }),
+            duration: Some(1.0), offset_y: None,
+            metadata: CaptionMetadata::default(),
+        }).unwrap();
+        editor.apply(Command::AddTextClip {
+            track_id: Some("T1".into()), above: false, start: 3.0,
+            style: Some(TextStyle { content: "Créditos".into(), ..TextStyle::default() }),
+            duration: Some(1.0), offset_y: None,
+        }).unwrap();
+        let cues = caption_cues(editor.project().active(), Some("T1"));
+        assert_eq!(cues.len(), 1);
+        assert_eq!(cues[0].text, "Subtítulo");
     }
 
     #[test]
