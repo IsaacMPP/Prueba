@@ -86,6 +86,10 @@ struct Subject {
     timeline_id: String,
     start: f64,
     speed: f64,
+    source_start: f64,
+    duration: f64,
+    media_id: String,
+    audio_stream: Option<u32>,
     /// The look chosen when the run began.
     look: (f64, f64),
     /// The transcriber model, and the thirty-second windows whisper reads
@@ -206,10 +210,19 @@ impl CaptionsPane {
                         // Never create orphan captions if their source clip
                         // was deleted or the editor switched timelines while
                         // recognition ran.
+                        let current = studio.clip(&subject.clip_id);
                         if studio.timeline().id != subject.timeline_id
-                            || studio.clip(&subject.clip_id).is_none()
+                            || current.is_none_or(|clip| {
+                                clip.start != subject.start
+                                    || clip.speed != subject.speed
+                                    || clip.source_start != subject.source_start
+                                    || clip.duration != subject.duration
+                                    || clip.media_id != subject.media_id
+                                    || clip.audio_stream != subject.audio_stream
+                            })
                         {
-                            self.message = t("captions.clipNoLongerTimeline");
+                            self.message = "El clip original cambió durante la transcripción.                                 No se crearon subtítulos desincronizados; vuelve a transcribir."
+                                .into();
                             return;
                         }
                         let look = subject.look;
@@ -575,6 +588,10 @@ impl CaptionsPane {
             timeline_id: studio.timeline().id.clone(),
             start: clip.start,
             speed: clip.speed,
+            source_start: clip.source_start,
+            duration: clip.duration,
+            media_id: clip.media_id.clone(),
+            audio_stream: clip.audio_stream,
             look: self.look(),
             model,
             windows,
