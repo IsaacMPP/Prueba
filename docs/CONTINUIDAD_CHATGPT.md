@@ -1,5 +1,16 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## DECISIÓN VIGENTE — ANDROID / VERSIÓN MÓVIL SE POSPONE (24 OCT 2026)
+
+**Decisión explícita del usuario:** no implementar ni compilar una APK de Estudio Joven por ahora. **Primero concluir, estabilizar y probar funcionalmente Estudio Joven para PC/Windows**: subtítulos, edición, karaoke cuando corresponda, guardado/reapertura, exportación, rendimiento y el resto de compromisos priorizados. **Solo cuando la versión PC esté estable y funcional y el usuario autorice expresamente retomar móvil**, iniciaremos la adaptación y validación Android. No iniciar ramas móviles, CI Android, APK ni nuevos compromisos de desarrollo en este momento.
+
+**Factibilidad ya investigada, sin implementar:** la base Concat tiene `src/src/crates/concat-android`, interfaz táctil Slint en `src/src/crates/concat/ui/phone` y scripts `src/src/scripts/*mobile*.sh`. Son una base, no una APK Estudio Joven ya validada. Cuando corresponda, realizar auditoría de compatibilidad Android ARM64, SDK/NDK, bibliotecas multimedia y carga de modelos, interfaz tablet horizontal y pruebas reales sin alterar la fuente estable PC. **Android es una etapa posterior, no se agrega como compromiso n.º 39.**
+
+Esta decisión prima sobre cualquier sugerencia anterior de preparar APK en paralelo. La Fase 3C PC sigue siendo el trabajo activo y sus verificaciones aún deben confirmarse. `main` y el inspector **Texto original** no se modifican, no fusionar PR #9 sin autorización y conservar los **38 compromisos EJ-001 a EJ-038**.
+
+---
+
+
 ## FASE 3C — SEGMENTACIÓN CONFIGURABLE IMPLEMENTADA, VALIDACIÓN EN CURSO (24 OCT 2026)
 
 **Código integrado:** [commit 67d70c2](https://github.com/IsaacMPP/Prueba/commit/67d70c20f614b572ed6af400158c8b9288025d1c), rama `feature/fase3-editor-transcripcion-subtitulos`, PR #9 sigue draft y `main` intacta. El usuario confirmó manualmente las dos correcciones F3B (selección y barra). CI F3B [#40123969756](https://github.com/IsaacMPP/Prueba/actions/runs/40123969756) **success**.
