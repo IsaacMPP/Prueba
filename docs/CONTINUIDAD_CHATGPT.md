@@ -1,0 +1,125 @@
+# ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
+
+> **Punto de recuperación preparado el 24 de octubre de 2026 (America/Cancun).**
+> Es un *resumen de referencia*, NO prueba de que GitHub mantenga hoy estos mismos estados. Siempre consultar GitHub antes de cambiar archivos.
+
+## 0. Instrucción para cualquier conversación nueva
+
+El usuario desarrolla **Estudio Joven**, un editor de video de escritorio para Windows basado en **Concat**. El repositorio autorizado es **https://github.com/IsaacMPP/Prueba**.
+
+**Primero, sin escribir código:**
+1. Acceder a GitHub y leer **este documento**, [REGISTRO_MAESTRO.md](REGISTRO_MAESTRO.md), [RUTA_CRITICA_ENTREGAS.md](RUTA_CRITICA_ENTREGAS.md) y [FASE3_EDITOR_INTERACTIVO.md](FASE3_EDITOR_INTERACTIVO.md) en la rama de trabajo.
+2. Comprobar la rama y SHA actuales, el estado del **PR #9** y los últimos workflows de Actions; nunca asumir que una compilación pendiente sigue igual.
+3. Comparar resultados con el estado de referencia de abajo; informar lo confirmado, lo pendiente y el siguiente paso.
+4. Continuar desde la última versión **validada**; un PR en borrador o un pipeline verde no significan automáticamente una función terminada.
+5. Si el usuario autoriza implementar, trabajar en Rust/Slint **directamente en archivos fuente versionados**, con pruebas y una rama/PR aislados; no empezar módulos nuevos mientras el anterior tenga errores críticos sin resolver.
+
+La conversación previa llegó a su límite de longitud. **No pedir al usuario que vuelva a contar todo el proyecto: este archivo y sus documentos complementarios son el punto de partida.**
+
+## 1. Identidad, objetivos y restricciones
+
+- Producto: **Estudio Joven**, editor de video completo, no una aplicación independiente de subtítulos.
+- Base técnica: Concat, escritorio Windows, Rust + Slint en la fuente nativa. Concat original: commit \`2756209a92766a4e4726999a51648349a272c159\`.
+- La intención es ser útil tanto en computadoras medianas como en equipos potentes; el usuario dispone de una **RTX 3070 Ti**, pero el programa NO debe exigir NVIDIA.
+- Se requiere transcripción local Whisper, editor visual integrado, subtítulos configurables, karaoke, animaciones similares a CapCut, importación/exportación SRT, más adelante voces TTS y otras funciones avanzadas.
+- **Usar siempre el inspector Texto ORIGINAL de Concat** para tipografía, color, contorno, sombra, efectos y Glow futuro. NO crear un segundo editor de apariencia.
+- Distinguir un título de un subtítulo mediante **metadatos explícitos**, no por la cantidad de clips de texto en una pista.
+- Los subtítulos y transcripciones deben persistir al guardar/reabrir, con identificadores estables, modificaciones individuales y deshacer.
+- «Frases» es una **configuración de segmentación**, no un modo visual equivalente a Normal/Karaoke.
+
+## 2. Reglas no negociables acordadas con el usuario
+
+1. **Analizar → Diseñar → Presentar para revisión → Obtener autorización → Implementar → Compilar → Probar.**
+2. El usuario puede delegar el **orden de prioridades**, pero eso no autoriza a introducir funciones ajenas al alcance vigente sin diseño.
+3. **Nada de parches acumulativos:** si algo está mal estructurado, refactorizar o rehacer correctamente. Nunca encadenar scripts Python que reescriban Rust/Slint durante build.
+4. Reutilizar módulos y controles existentes; evitar duplicar estados, inspectores, renderizadores o sistemas de selección.
+5. Mantener \`main\` y el instalador previamente probado intactos. **No fusionar PR ni reemplazar una versión sin autorización explícita.**
+6. Conservar todos los pendientes con identificador; actualizar el registro en cada cambio. No marcar «terminado» solo porque compiló.
+7. Verificar compatibilidad con proyectos anteriores, comportamiento Windows real y paridad entre vista previa y exportación.
+8. Si GitHub Actions falla, inspeccionar el log y corregir la fuente responsable; no generar parches improvisados ni crear múltiples ejecuciones consecutivas sin necesidad.
+9. Declarar las limitaciones con precisión: tests automáticos, compilación, prueba manual y funcionalidad entregada son niveles diferentes.
+
+## 3. Estado de GitHub verificado en el punto de recuperación
+
+Repositorio: **https://github.com/IsaacMPP/Prueba**
+
+| Elemento | Referencia | Estado observado el 24-10-2026 |
+|---|---|---|
+| \`main\` | \`a7739f2f1010765d457fac4cb46fbdd5397db63c\` | Rama principal sin fusionar la reconstrucción |
+| Fuente nativa — Fase 1 | [PR #6](https://github.com/IsaacMPP/Prueba/pull/6), rama \`feature/reconstruccion-fuente-nativa\` | Draft, CI de compilación base Windows superado |
+| Modelo persistente — Fase 2A | [PR #7](https://github.com/IsaacMPP/Prueba/pull/7), rama \`feature/fase2-datos-transcripcion-subtitulos\` | Draft; tests del modelo aprobados |
+| Whisper + metadatos/SRT — Fase 2B | [PR #8](https://github.com/IsaacMPP/Prueba/pull/8), rama \`feature/fase2-whisper-conexion-nativa\` | Draft; [Actions #40059410498](https://github.com/IsaacMPP/Prueba/actions/runs/40059410498) **success**, 170 pruebas, build/smoke/instalador |
+| Editor de frases — Fase 3A | [PR #9](https://github.com/IsaacMPP/Prueba/pull/9), rama **\`feature/fase3-editor-transcripcion-subtitulos\`** | Draft, sin fusionar. HEAD documentado: \`3c670bf31b67ddeda2d07279504bcc9aa6d26399\` |
+| Fase 3 Actions | [#19](https://github.com/IsaacMPP/Prueba/actions/runs/40110783642) | \`in_progress\` en \`Build\` para SHA anterior \`a3207a78...\` |
+| Última ejecución Fase 3 visible | [#31](https://github.com/IsaacMPP/Prueba/actions/runs/40112515736) | \`pending\` para SHA \`69090224...\`; aún NO se confirmó un build verde de la última UI |
+| Ejecuciones #20–#30 Fase 3 | Actions | \`cancelled\` en espera; gris **no** equivale a error Rust/Slint |
+
+**Importante:** el HEAD \`3c670bf...\` contiene commits posteriores de **documentación** a la ejecución #31. Consultar workflows, HEAD y cambios más recientes de nuevo; el estado puede haber cambiado. No asegurar que el PR #9 ya compiló hasta disponer de prueba.
+
+Las ramas antiguas [PR #1–#5](https://github.com/IsaacMPP/Prueba/pulls) contienen prototipos de karaoke, animaciones y rediseño, pero **NO se fusionan ni se copian a ciegas** a la reconstrucción nativa.
+
+## 4. Arquitectura y archivos para localizar trabajo
+
+En \`feature/fase3-editor-transcripcion-subtitulos\`:
+- \`src/src/crates/concat-project/src/caption_data.rs\`: \`TranscriptDocument\`, segmentos, palabras, \`CaptionMetadata\`, modos normal/progresivo/por palabra, identificación y exportación filtrada.
+- \`src/src/crates/concat-project/src/commands/mod.rs\` y \`commands/subtitles.rs\`: cambios nativos deshacibles y creación de subtítulos identificados.
+- \`src/src/crates/concat/src/panes/captions.rs\`: generación Whisper, SRT, conexión con el editor.
+- \`src/src/crates/concat/src/panes/caption_editor.rs\`: selección por ID, borradores, cambio de destino, Aplicar/Descartar y actualización de textos.
+- \`src/src/crates/concat/ui/dialogs/captions.slint\`: pestañas Generar/Editar y Transcripción/Subtítulos.
+- \`src/src/crates/concat/ui/app.slint\` y \`src/src/crates/concat/src/lib.rs\`: conexión de callbacks UI ↔ Rust.
+- \`src/src/crates/concat/src/studio.rs\`: selección del clip real y uso del inspector Texto original.
+- \`.github/workflows/compilar-fuente-nativa-windows.yml\`: compilación Windows desde fuente versionada, sin cadena de scripts de parcheo.
+- \`docs/FASE2_MODELO_PERSISTENTE.md\`, \`docs/FASE2B_WHISPER_NATIVO.md\`, \`docs/FASE3_EDITOR_INTERACTIVO.md\`: detalles por incremento.
+
+### Lo que ya existe en Fase 3A (código, no versión entregada)
+- Panel Generar/Editar, subpestañas Transcripción/Subtítulos y un **selector de frases**; aún NO una lista simultánea de filas estilo Premiere.
+- Edición por borrador y botones Aplicar, Descartar y Seguir editando.
+- Confirmación al salir/cambiar de selección con cambios no aplicados.
+- Selección del clip de subtítulo real en la línea de tiempo, conservando el inspector Texto original.
+- Corrección de una transcripción y actualización de subtítulos vinculados cuyo texto no fue personalizado, con operaciones de deshacer.
+- Correcciones recientes para verificar que Aplicar realmente persista y para que Descartar consulte la versión actual tras Undo/Redo.
+- Pendiente verificar que todo esto **compile** en Windows y funcione con un video real.
+
+## 5. Qué falta — prioridades estrictas
+
+**Próxima tarea inmediata: estabilizar Fase 3, NO comenzar karaoke ni voces IA aún.**
+
+1. Consultar el último workflow de PR #9 y los logs. Si falló: diagnosticar y corregir la fuente Rust/Slint de esa rama. Evitar múltiples pushes simultáneos que cancelen runs pendientes.
+2. Al pasar CI: revisar instalador y pruebas manuales Windows con audio real (transcribir, seleccionar, editar, aplicar, descartar, cambiar frase/pestaña con borrador, Ctrl+Z/Ctrl+Y, guardar/cerrar/reabrir, exportar SRT). **No afirmar haber probado Windows manualmente sin evidencia.**
+3. Completar Fase 3: lista con filas **visibles simultáneamente y scroll** en Transcripción y Subtítulos, selección visual clara y bidireccional con la línea de tiempo, edición de inicio/fin, dividir/unir, selección múltiple por pista, reglas de subtitulación (caracteres, líneas, duración), buscar/reemplazar, cambios individuales y masivos.
+4. Compatibilidad: proyectos viejos con clips de texto sin \`CaptionMetadata\` no deben etiquetarse automáticamente; diseñar migración/clasificación segura. No perder SRT ni textos.
+5. **Fase 4:** modo Normal, karaoke progresivo y por palabra; tiempo exacto por palabra (estimado debe marcarse como estimado), colores configurables, conservados A → B → A y tras guardado; resolver frases largas y preview/export.
+6. **Fase 5:** animaciones estilo CapCut, Glow para cualquier texto, estilos vinculados con excepciones individuales, copiar/pegar atributos y duración editable.
+7. **Fase 5.5:** Voces IA TTS locales (Kokoro/Piper o alternativa validada), opciones más expresivas y APIs externas optativas, vista previa e inserción directa en pista; revisar licencias de modelos/voces y hardware.
+8. **Fase 6:** CUDA opcional y fallback CPU, autodetección modelos Whisper, tareas no bloqueantes, pruebas de fluidez y recursos con 500 subtítulos y PCs medianas.
+9. **Fase 7:** diarización de voces, pistas de idiomas, evaluar MOGRT real (no prometer soporte completo) y paneles acoplables.
+
+**El inventario completo y con criterios de aceptación de los 38 requisitos está en [REGISTRO_MAESTRO.md](REGISTRO_MAESTRO.md).** La priorización y puertas de calidad están en [RUTA_CRITICA_ENTREGAS.md](RUTA_CRITICA_ENTREGAS.md).
+
+## 6. Requisitos de UX que originaron la Fase 3
+
+El usuario enseñó una captura del editor donde los subtítulos aparecían en una lista oscura, sin indicar qué fila estaba seleccionada; cambiar el modo Normal/Frases/Karaoke no aplicaba cambios a un clip existente. Quiere:
+- Transcripción y Subtítulos en pestañas, ambos con filas visibles, selección resaltada y scroll.
+- En Transcripción, corregir el texto original antes de crear o modificar subtítulos.
+- En Subtítulos, poder seleccionar una fila y modificar ese **subtítulo específico** sin afectar otros.
+- Botones para Aplicar/Descartar y cambios pendientes; acción en lote similar a Premiere.
+- Cada texto conserva su modo (normal, progresivo, por palabra), su color, tiempos y animaciones, incluso después de cambiar la selección o cerrar/reabrir.
+- **No duplicar el panel de propiedades Texto de Concat**. Glow se agregará al editor común para TODOS los textos en la fase correspondiente.
+- El usuario valora una interfaz limpia, profesional, usable y sin controles duplicados.
+
+## 7. Plan de trabajo de la próxima conversación
+
+1. Abrir este documento y los otros documentos maestros desde GitHub.
+2. Consultar **en vivo** PR #9, acciones más recientes, rama HEAD, diferencias con el snapshot y logs si hay un fallo.
+3. Presentar un resumen corto: estado confirmado, tareas pendientes, riesgo principal, siguiente cambio puntual.
+4. **No comenzar una fase futura si Fase 3 aún falla.** Si la tarea solicitada es corregir la compilación, trabajar solo sobre la causa de ese fallo y sus pruebas.
+5. Después de cualquier cambio, actualizar \`docs/REGISTRO_MAESTRO.md\` y este punto de recuperación si cambian decisiones o estado. No crear varias fuentes contradictorias.
+6. Para futuras conversaciones: usar siempre la **última versión** de este archivo en GitHub, no los SHAs históricos que contiene.
+
+## 8. Mensaje listo para pegar en un chat nuevo
+
+> Quiero continuar mi proyecto **Estudio Joven** en el repositorio GitHub **IsaacMPP/Prueba**. Antes de programar, abre y lee el archivo \`docs/CONTINUIDAD_CHATGPT.md\` de la rama \`feature/fase3-editor-transcripcion-subtitulos\`, junto con \`docs/REGISTRO_MAESTRO.md\`, \`docs/RUTA_CRITICA_ENTREGAS.md\` y \`docs/FASE3_EDITOR_INTERACTIVO.md\`. Consulta en vivo el PR #9, el HEAD de GitHub y la compilación más reciente. Dime dónde estamos y qué falta, distinguiendo lo compilado de lo probado en Windows. Sigue nuestras reglas: diseñar antes de programar, no parchar, conservar el inspector Texto original, mantener main intacta y no olvidar ningún pendiente. Primero verifica el estado; después continuamos con la fase que corresponda, sin adelantar funciones.
+
+---
+
+**Mantenimiento:** actualizar cuando termine una compilación relevante, una prueba manual, un hito o cambie una decisión técnica. Si un enlace/branch deja de existir, localizar el documento por ruta en la rama sucesora o utilizar la copia descargada. Ningún estado histórico sustituye una verificación actual.
