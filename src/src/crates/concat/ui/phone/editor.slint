@@ -1467,6 +1467,10 @@ export component PhoneEditor inherits Rectangle {
             params: Editor.adjust-params;
             wheels: Editor.adjust-wheels;
             curves: Editor.adjust-curves;
+            camera-log-enabled: Editor.camera-log-enabled;
+            camera-log-current: Editor.camera-log-current;
+            camera-log-import(profile) => { Editor.camera-log-import(profile); }
+            camera-log-clear => { Editor.camera-log-clear(); }
             set(key, value) => { Editor.adjust-set(key, value); }
             curve-point(key, point, x, y) => { Editor.curve-point(-1, key, point, x, y); }
             curve-remove(key, point) => { Editor.curve-remove(-1, key, point); }

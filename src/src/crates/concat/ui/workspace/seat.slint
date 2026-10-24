@@ -246,6 +246,10 @@ export component Seat inherits Rectangle {
             audio-params: Editor.audio-params;
             adjust-params: Editor.adjust-params;
             adjust-set(key, value) => { Editor.adjust-set(key, value); }
+            camera-log-enabled: Editor.camera-log-enabled;
+            camera-log-current: Editor.camera-log-current;
+            camera-log-import(profile) => { Editor.camera-log-import(profile); }
+            camera-log-clear => { Editor.camera-log-clear(); }
             adjust-wheels: Editor.adjust-wheels;
             adjust-curves: Editor.adjust-curves;
             visual-wheels: Editor.visual-wheels;

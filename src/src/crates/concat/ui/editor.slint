@@ -192,6 +192,11 @@ export global Editor {
     /// The Adjust tab: the colour package's knobs for the selected clip.
     in-out property <[AppliedParamData]> adjust-params;
     callback adjust-set(key: string, value: float);
+    // A camera's technical input transform, before the creative grade.
+    in-out property <bool> camera-log-enabled;
+    in-out property <string> camera-log-current;
+    callback camera-log-import(profile: int);
+    callback camera-log-clear();
     /// The Adjust tab's wheels and curves, and the picture chain's, a
     /// group a link: see `grading.slint`. A wheel's puck and master are set
     /// as knobs, `<key>.x`, `<key>.y` and `<key>.m`; a curve's points by

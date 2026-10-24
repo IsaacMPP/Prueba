@@ -6,6 +6,10 @@
 
 ## Orden de construcción y condiciones de paso
 
+**Incremento solicitado Color LOG, sin alterar ruta principal:** el usuario pidió convertir material Sony/Canon/DJI LOG para Rec.709 en JA Video Studio Windows, inspirado en ArtCraft. Primera integración de importación de LUT de cámara .cube a inspector Ajustar y cadena persistente de efectos está en **validación**, no en producción ni Fase 3C finalizada. Confirmar compilación Rust/Slint, Windows real con material LOG, LUT correcta de fabricante, vista previa/exportación, Undo/Redo y proyectos abiertos en otra PC. Ninguna actividad JA Connect o Android hasta que PC esté estable, por decisión del usuario. No modificar los 38 compromisos.
+
+
+
 **Decisión vinculante 24 oct 2026 — versión móvil diferida:** completar, estabilizar y validar la versión PC/Windows en todas las puertas relevantes de esta ruta antes de iniciar trabajo Android. **Requiere autorización expresa del usuario cuando la versión PC esté estable y funcional.** No iniciar APK, CI Android ni rama móvil por ahora. La evaluación de la base Concat Android queda como antecedente de factibilidad, no como entrega. No agregar a los 38 pendientes ni fusionar PR sin autorización.
 
 ### Puerta A — Fase 3: estabilizar antes de extender

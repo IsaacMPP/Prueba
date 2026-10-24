@@ -162,6 +162,10 @@ export component ConfigPane inherits Rectangle {
     /// selected clip's values or the defaults.
     in property <[AppliedParamData]> adjust-params;
     callback adjust-set(key: string, value: float);
+    in property <bool> camera-log-enabled;
+    in property <string> camera-log-current;
+    callback camera-log-import(profile: int);
+    callback camera-log-clear();
     /// The colour panel's wheels and curves, and the picture chain's by link.
     in property <[WheelData]> adjust-wheels;
     in property <[CurveData]> adjust-curves;
@@ -689,6 +693,10 @@ export component ConfigPane inherits Rectangle {
                     params: root.adjust-params;
                     wheels: root.adjust-wheels;
                     curves: root.adjust-curves;
+                    camera-log-enabled: root.camera-log-enabled;
+                    camera-log-current: root.camera-log-current;
+                    camera-log-import(profile) => { root.camera-log-import(profile); }
+                    camera-log-clear => { root.camera-log-clear(); }
                     set(key, value) => { root.adjust-set(key, value); }
                     curve-point(key, point, x, y) => { root.curve-point(-1, key, point, x, y); }
                     curve-remove(key, point) => { root.curve-remove(-1, key, point); }

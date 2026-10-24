@@ -2540,6 +2540,12 @@ export component AdjustPanel inherits VerticalLayout {
     in property <[AppliedParamData]> params;
     in property <[WheelData]> wheels;
     in property <[CurveData]> curves;
+    // Technical LOG input transform, per selected camera video.
+    in property <bool> camera-log-enabled;
+    in property <string> camera-log-current;
+    callback camera-log-import(profile: int);
+    callback camera-log-clear();
+    property <int> camera-profile: 0;
 
     callback set(key: string, value: float);
     /// A curve's point moved, or put down when `point` is -1, or taken off.
@@ -2547,8 +2553,73 @@ export component AdjustPanel inherits VerticalLayout {
     callback curve-remove(key: string, point: int);
     callback commit();
 
-    Section {
+    // Camera LOG normalization is distinct from creative LUT looks.
+    // The manufacturer-supplied table goes first in the picture's chain,
+    // so wheels, curves and creative effects grade the Rec.709 result.
+    if root.camera-log-enabled || root.camera-log-current != "": Section {
         first: true;
+        SectionHeader {
+            title: "Convertir LOG a Rec.709";
+        }
+        SectionBody {
+            VerticalLayout {
+                padding-left: Theme.pad;
+                padding-right: Theme.pad;
+                padding-top: 8px;
+                padding-bottom: 10px;
+                spacing: 9px;
+
+                Text {
+                    text: "Perfil de grabación";
+                    color: Theme.fg;
+                    font-size: Theme.fs-sm;
+                }
+                Select {
+                    options: [
+                        "Sony S-Log3 / S-Gamut3.Cine",
+                        "Sony S-Log2 / S-Gamut",
+                        "Canon Log 2 / Cinema Gamut",
+                        "Canon Log 3 / Cinema Gamut",
+                        "DJI D-Log",
+                        "DJI D-Log M (según cámara)",
+                    ];
+                    current: root.camera-profile;
+                    changed(index) => { root.camera-profile = index; }
+                    enabled: root.camera-log-enabled;
+                }
+                Button {
+                    label: "Importar y aplicar LUT oficial (.cube)";
+                    block: true;
+                    primary: true;
+                    enabled: root.camera-log-enabled;
+                    clicked => { root.camera-log-import(root.camera-profile); }
+                }
+                if root.camera-log-current != "": VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: "Conversión aplicada: " + root.camera-log-current;
+                        color: Theme.fg;
+                        font-size: Theme.fs-sm;
+                        wrap: word-wrap;
+                    }
+                    Button {
+                        label: "Quitar conversión LOG";
+                        block: true;
+                        ghost: true;
+                        clicked => { root.camera-log-clear(); }
+                    }
+                }
+                Text {
+                    text: "Descarga la LUT técnica LOG a Rec.709 del fabricante y elige el perfil exacto usado al grabar. DJI D-Log M necesita la LUT del modelo de cámara. No utilices una LUT creativa como conversión técnica.";
+                    color: Theme.fg-dim;
+                    font-size: Theme.fs-sm;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+
+    Section {
         SectionHeader {
             title: I18n.t("common.adjust");
             HelpButton {
