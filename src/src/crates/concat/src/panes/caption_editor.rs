@@ -127,8 +127,7 @@ impl CaptionEditor {
             return false;
         }
         if !apply {
-            self.draft = self.original.clone();
-            self.message.clear();
+            self.discard(studio);
         }
         let next = self.pending.take();
         next.is_some_and(|next| self.perform_navigation(studio, next))
