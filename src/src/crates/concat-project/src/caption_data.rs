@@ -123,7 +123,9 @@ impl Default for CaptionMetadata {
 }
 
 impl CaptionMetadata {
-    pub fn valid_for_clip(&self, duration: f64) -> bool {
+    /// Metadata identity must survive a later trim: trimming a clip can
+    /// shorten it before the karaoke clocks are realigned in the editor.
+    pub fn valid(&self) -> bool {
         let color_ok = self.active_color.strip_prefix('#')
             .is_some_and(|hex| hex.len() == 6 && hex.bytes().all(|c| c.is_ascii_hexdigit()));
         if !color_ok { return false; }
@@ -131,12 +133,20 @@ impl CaptionMetadata {
         let mut previous = 0.0;
         for word in &self.words {
             if word.id.trim().is_empty() || !seen.insert(word.id.as_str())
-                || !interval(word.start, word.end)
-                || word.end > duration + 0.000001
-                || word.start < previous { return false; }
+                || !interval(word.start, word.end) || word.start < previous
+            {
+                return false;
+            }
             previous = word.start;
         }
         true
+    }
+
+    /// New metadata must fit the clip; existing metadata remains readable
+    /// after trimming so subtitle classification cannot disappear silently.
+    pub fn valid_for_clip(&self, duration: f64) -> bool {
+        self.valid() && duration.is_finite() && duration > 0.0
+            && self.words.iter().all(|word| word.end <= duration + 0.000001)
     }
 }
 
@@ -147,7 +157,7 @@ impl Clip {
     pub fn caption_metadata(&self) -> Option<CaptionMetadata> {
         if self.kind != ClipKind::Text { return None; }
         let meta = from_value::<CaptionMetadata>(self.extra.get(CAPTION)?.clone()).ok()?;
-        meta.valid_for_clip(self.duration).then_some(meta)
+        meta.valid().then_some(meta)
     }
 
     pub(crate) fn set_caption_metadata(&mut self, meta: Option<CaptionMetadata>) -> bool {
@@ -302,6 +312,33 @@ mod tests {
                 ..CaptionMetadata::default() }),
         }).is_err());
         assert!(editor.project().caption_clip_ids("TL1").is_empty());
+    }
+
+    #[test]
+    fn trimming_a_caption_never_makes_its_identity_disappear() {
+        use crate::commands::TrimEdge;
+        let mut editor = Editor::new();
+        let id = editor.apply(Command::AddCaptionClip {
+            track_id: Some("T1".into()), above: false, start: 0.5,
+            style: Some(TextStyle {
+                content: "Texto".into(), ..TextStyle::default()
+            }), duration: Some(2.0), offset_y: None,
+            metadata: CaptionMetadata {
+                words: vec![CaptionWord {
+                    id: "w1".into(), start: 1.0, end: 1.8
+                }],
+                ..CaptionMetadata::default()
+            },
+        }).unwrap().created_id.unwrap();
+        editor.apply(Command::TrimClip {
+            clip_id: id.clone(), edge: TrimEdge::End, delta: -1.3, ripple: false,
+        }).unwrap();
+        let clip = editor.project().active().clips.iter()
+            .find(|clip| clip.id == id).unwrap();
+        assert!(clip.duration < 1.8);
+        assert!(clip.caption_metadata().is_some(),
+            "classification survives until word timings are adjusted");
+        assert_eq!(editor.project().caption_clip_ids("TL1").len(), 1);
     }
 
     #[test]
