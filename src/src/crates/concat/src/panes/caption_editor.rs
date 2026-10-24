@@ -156,6 +156,11 @@ impl CaptionEditor {
         self.message.clear();
     }
 
+    pub fn discard(&mut self) {
+        self.draft = self.original.clone();
+        self.message.clear();
+    }
+
     pub fn apply(&mut self, studio: &mut Studio) -> bool {
         if !self.dirty() {
             return true;
@@ -210,8 +215,8 @@ impl CaptionEditor {
                 // text inspector take precedence over later transcript edits.
                 for clip in &studio.timeline().clips {
                     let Some(meta) = clip.caption_metadata() else { continue; };
-                    if meta.transcript_id.as_deref() != Some(&transcript_id)
-                        || meta.segment_id.as_deref() != Some(&segment_id)
+                    if meta.transcript_id.as_deref() != Some(transcript_id.as_str())
+                        || meta.segment_id.as_deref() != Some(segment_id.as_str())
                     {
                         continue;
                     }
