@@ -2,7 +2,7 @@
 
 **Fecha de decisión:** 24 de octubre de 2026. La prioridad es una aplicación útil y comprobable, no la cantidad de funciones implementadas. Este plan coordina el registro maestro; no reemplaza sus 38 criterios.
 
-**Nombre y estrategia de producto vigentes (24 oct 2026):** **JA Video Studio** será el nombre público final del editor para PC. **Estudio Joven Connect** designa la futura función de comunicación y procesamiento entre una PC que actúa como servidor privado y clientes móviles. El usuario desea construir una **Suite** posteriormente, pero **primero exige terminar y estabilizar el editor de video Windows**; Android/Connect y otras apps solo tras autorización expresa. No renombrar paquetes, rutas, proyectos ni instaladores durante Fase 3C; planificar migración cuando corresponda y preservar los 38 compromisos.
+**Nombre y estrategia de producto vigentes (24 oct 2026):** **JA Video Studio** será el nombre público final del editor para PC. **JA Connect** designa la futura función de comunicación y procesamiento entre una PC que actúa como servidor privado y clientes móviles. El usuario desea construir una **Suite** posteriormente, pero **primero exige terminar y estabilizar el editor de video Windows**; Android/Connect y otras apps solo tras autorización expresa. No renombrar paquetes, rutas, proyectos ni instaladores durante Fase 3C; planificar migración cuando corresponda y preservar los 38 compromisos.
 
 ## Orden de construcción y condiciones de paso
 
