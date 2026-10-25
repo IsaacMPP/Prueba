@@ -1,5 +1,21 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## REDISEÑO DE SUBTÍTULOS — INCREMENTO R1, AUTORIZADO (25 OCT 2026; VALIDAR EN CI Y WINDOWS)
+
+**Problemas observados por el usuario en Windows con metraje real:** seleccionar Karaoke Palabra **todavía deja visible la oración completa**; los controles de tiempos parecían reiniciarse, ajustar una palabra rechazaba el cambio sin comportamiento útil, navegar entre frases restablecía la palabra seleccionada y «Crear tiempos estimados» sobreescribía correcciones; falta un flujo de pista y edición similar a Adobe Premiere. El usuario autorizó explícitamente «procede» para **reconstruir el módulo de edición de subtítulos**, sin improvisar parches ni modificar el resto del editor.
+
+**Incremento R1 propuesto en fuente, no declarado aprobado:** 
+- El modelo `concat-project::caption_data` valida **no solapamiento real** de relojes consecutivos; introduce `move_caption_word_boundary` que mueve junto el límite compartido cuando dos palabras se tocan, mantiene pausas y no modifica nada si el nuevo límite es imposible (con tests).
+- La UI de karaoke distingue **crear tiempos ausentes** de **recalcular sobrescribiendo**. Si ya hay tiempos, el botón de estimación no los reemplaza; una acción explícita de recalcular exige confirmación en la UI. Las palabras seleccionadas en el editor se recuerdan por ID de subtítulo al navegar y al reabrir panel, en lugar de volver a palabra 1.
+- El editor añade un control **«Aplicar apariencia a esta pista de subtítulos»**, que copia tipografía/apariencia, modo Normal/Progresivo/Palabra y color desde el subtítulo actual a los demás subtítulos **identificados en esa misma pista**, mediante un **solo Command::Batch** deshacible. No modifica el texto de los otros clips, ni los relojes por palabra/alineación, ni títulos ordinarios ni otras pistas. Es una copia puntual: **NO** es aún un estilo de pista vinculado permanentemente al estilo maestro de Premiere. Hay pruebas de no pérdida de palabras, textos, títulos y Undo.
+- `save_karaoke` verifica el estado persistido y muestra error si el comando falló.
+- UI `ui/dialogs/captions.slint` + cableado `ui/app.slint`, `src/lib.rs`, traducciones `locales/en.json`, `locales/es.json`. Archivos de modelo: `concat-project/src/caption_data.rs`, `concat/src/panes/captions.rs`.
+
+**Puertas abiertas:** R1 requiere pasar CI Windows Rust+Slint y pruebas reales antes de afirmar que guarda correctamente; el flujo tipo Premiere completo (panel fijo en el editor, pista de subtítulos con estilo maestro real, límites de frase arrastrables, división/unión, snapping, sincronización por audio, karaoke 1 palabra realmente centrada en previsualización y exportación) **SIGUE PENDIENTE**, no confundir R1 con rediseño terminado. El render anterior K2 es prototipo de resaltado, no cumple el modo una palabra sola. No introducir otros módulos en paralelo. Los 38 EJ se mantienen, inspector Texto original, `main` y PR #9 draft siguen protegidos.
+
+---
+
+
 ## CORRECCIÓN AUTORIZADA DE ARRANQUE K2 — PALABRA RESERVADA WGSL (24 OCT 2026)
 
 El usuario autorizó **corregir el fallo identificado** del karaoke, sin ampliar alcance. [Windows CI #40151622185](https://github.com/IsaacMPP/Prueba/actions/runs/40151622185) finalizó `failure` en **Smoke test (Windows)** a pesar de compilar y pasar **172 pruebas Rust de concat-project**. El ejecutable abortó al cargar el catálogo de efectos incorporados, porque el shader `src/src/crates/concat-effects/packages/concat.karaoke-highlight/effect.wgsl` declaró `let active`, pero `active` es nombre reservado en WGSL (`catalogue.rs:1000`). Se sustituye únicamente esa variable por `word_is_active` en su declaración y referencia. Ni la lógica del efecto, ni tiempos de palabra, ni visuales, ni shaders ajenos se modifican.

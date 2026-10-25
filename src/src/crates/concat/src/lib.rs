@@ -2135,6 +2135,12 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
     app.on_captions_karaoke_estimate(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::KaraokeEstimate));
     }));
+    app.on_captions_karaoke_reestimate(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeReestimate));
+    }));
+    app.on_captions_karaoke_apply_track_style(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeApplyTrackStyle));
+    }));
     app.on_captions_karaoke_word_selected(on_window!(|state, index: i32| {
         state.handle(Msg::Captions(CaptionsMsg::KaraokeSelectWord(index)));
     }));

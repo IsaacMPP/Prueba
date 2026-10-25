@@ -167,6 +167,51 @@ impl CaptionMetadata {
     }
 }
 
+/// Moves a start/end word boundary inside a subtitle. When neighbouring
+/// words touch, their common boundary moves together, like a trim handle
+/// rather than rejecting every adjustment as an overlap. Gaps remain gaps.
+/// On any invalid request the entire slice remains unchanged.
+pub fn move_caption_word_boundary(
+    words: &mut [CaptionWord], index: usize, change_start: bool, value: f64, duration: f64,
+) -> bool {
+    if words.is_empty() || index >= words.len()
+        || !duration.is_finite() || duration <= 0.0
+        || !value.is_finite() || value < 0.0 || value > duration
+    {
+        return false;
+    }
+    let mut draft = words.to_vec();
+    const ADJACENT_EPSILON: f64 = 0.00001;
+    if change_start {
+        if index > 0
+            && (draft[index - 1].end - draft[index].start).abs() < ADJACENT_EPSILON
+        {
+            draft[index - 1].end = value;
+        }
+        draft[index].start = value;
+    } else {
+        if index + 1 < draft.len()
+            && (draft[index].end - draft[index + 1].start).abs() < ADJACENT_EPSILON
+        {
+            draft[index + 1].start = value;
+        }
+        draft[index].end = value;
+    }
+    let mut prev_end = 0.0;
+    for word in &draft {
+        if !interval(word.start, word.end)
+            || word.start < prev_end - ADJACENT_EPSILON
+            || word.end > duration + ADJACENT_EPSILON
+        {
+            return false;
+        }
+        prev_end = word.end;
+    }
+    if words == draft { return true; }
+    words.clone_from_slice(&draft);
+    true
+}
+
 fn default_active_color() -> String { "#FFE040".into() }
 fn interval(a: f64, b: f64) -> bool { a.is_finite() && b.is_finite() && a >= 0.0 && b > a }
 
@@ -284,6 +329,48 @@ mod tests {
         assert!(editor.redo());
         let document = to_document(&settings(), editor.project());
         assert_eq!(from_document(&document).unwrap().transcript("tx1"), Some(tx));
+    }
+
+    #[test]
+    fn a_shared_word_boundary_ripples_to_its_neighbour_atomically() {
+        let mut words = vec![
+            CaptionWord { id: "one".into(), start: 0.0, end: 1.0 },
+            CaptionWord { id: "two".into(), start: 1.0, end: 2.0 },
+            CaptionWord { id: "three".into(), start: 2.0, end: 3.0 },
+        ];
+        assert!(move_caption_word_boundary(&mut words, 1, true, 1.3, 3.0));
+        assert_eq!(words[0].end, 1.3);
+        assert_eq!(words[1].start, 1.3);
+        assert_eq!(words[1].end, 2.0);
+        assert!(move_caption_word_boundary(&mut words, 1, false, 2.4, 3.0));
+        assert_eq!(words[1].end, 2.4);
+        assert_eq!(words[2].start, 2.4);
+        let stored = words.clone();
+        assert!(!move_caption_word_boundary(&mut words, 1, false, 3.1, 3.0));
+        assert!(!move_caption_word_boundary(&mut words, 1, true, -0.1, 3.0));
+        assert!(!move_caption_word_boundary(&mut words, 1, false, 3.0, 3.0));
+        assert_eq!(words, stored, "invalid edits cannot partially overwrite a timing");
+    }
+
+    #[test]
+    fn editing_a_gapped_word_does_not_stretch_its_neighbours() {
+        let mut words = vec![
+            CaptionWord { id: "one".into(), start: 0.0, end: 0.6 },
+            CaptionWord { id: "two".into(), start: 1.0, end: 1.8 },
+        ];
+        assert!(move_caption_word_boundary(&mut words, 1, true, 0.8, 2.0));
+        assert_eq!(words[0].end, 0.6);
+        assert!(!move_caption_word_boundary(&mut words, 1, true, 0.5, 2.0));
+        assert_eq!(words[1].start, 0.8);
+        // Historical projects with overlapping clocks must still load:
+        // only an attempted edit is rejected, leaving the original untouched.
+        let mut old_words = vec![
+            CaptionWord { id: "a".into(), start: 0.0, end: 1.0 },
+            CaptionWord { id: "b".into(), start: 0.7, end: 2.0 },
+        ];
+        let before = old_words.clone();
+        assert!(!move_caption_word_boundary(&mut old_words, 0, true, 0.1, 2.0));
+        assert_eq!(old_words, before);
     }
 
     #[test]

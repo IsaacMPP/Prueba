@@ -340,6 +340,8 @@ export component App inherits Window {
     callback captions-karaoke-mode(index: int);
     callback captions-karaoke-color(index: int);
     callback captions-karaoke-estimate();
+    callback captions-karaoke-reestimate();
+    callback captions-karaoke-apply-track-style();
     callback captions-karaoke-word-selected(index: int);
     callback captions-karaoke-word-start(value: float);
     callback captions-karaoke-word-end(value: float);
@@ -752,6 +754,8 @@ export component App inherits Window {
             karaoke-mode(index) => { root.captions-karaoke-mode(index); }
             karaoke-color(index) => { root.captions-karaoke-color(index); }
             karaoke-estimate => { root.captions-karaoke-estimate(); }
+            karaoke-reestimate => { root.captions-karaoke-reestimate(); }
+            karaoke-apply-track-style => { root.captions-karaoke-apply-track-style(); }
             karaoke-word-selected(index) => { root.captions-karaoke-word-selected(index); }
             karaoke-word-start(value) => { root.captions-karaoke-word-start(value); }
             karaoke-word-end(value) => { root.captions-karaoke-word-end(value); }

@@ -16,11 +16,13 @@
 //! The sheet also reads a SubRip file in as captions, with the same look,
 //! and writes the timeline's captions out as one.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use concat_project::Command;
-use concat_project::caption_data::{caption_cues, CaptionAlignment, CaptionMetadata, CaptionPresentation, CaptionWord, TranscriptDocument, TranscriptSegment};
+use concat_project::caption_data::{caption_cues, move_caption_word_boundary, CaptionAlignment, CaptionMetadata, CaptionPresentation, CaptionWord, TranscriptDocument, TranscriptSegment};
+use concat_project::commands::ClipPatch;
 use concat_project::model::{ClipKind, TextStyle};
 use concat_project::srt;
 use concat_speech::JobStage;
@@ -96,6 +98,10 @@ pub enum CaptionsMsg {
     KaraokeMode(i32),
     KaraokeColor(i32),
     KaraokeEstimate,
+    /// User-requested destructive recalculation; never implicit.
+    KaraokeReestimate,
+    /// Copy selected caption's typography and karaoke appearance to its track.
+    KaraokeApplyTrackStyle,
     KaraokeSelectWord(i32),
     KaraokeWordStart(f32),
     KaraokeWordEnd(f32),
@@ -163,6 +169,8 @@ pub struct CaptionsPane {
     pub editor: CaptionEditor,
     /// Word displayed in the selected caption's timing editor (UI state).
     pub karaoke_word: usize,
+    /// UI cursor per caption ID. Switching captions never resets the word cursor.
+    karaoke_word_by_clip: HashMap<String, usize>,
     /// The clip under the running transcription.
     subject: Option<Subject>,
     /// How long each model took this session, for the next run's bar.
@@ -384,11 +392,17 @@ impl CaptionsPane {
                 }
             }
             CaptionsMsg::EditorSelect(index) => {
-                self.karaoke_word = 0;
+                if let Some(Target::Caption { clip_id }) = &self.editor.selected {
+                    self.karaoke_word_by_clip.insert(clip_id.clone(), self.karaoke_word);
+                }
                 if let Some(entry) = usize::try_from(index).ok()
                     .and_then(|i| self.editor.entries(studio).into_iter().nth(i))
                 {
                     self.editor.navigate(studio, Navigation::Select(entry.target));
+                    if let Some(Target::Caption { clip_id }) = &self.editor.selected {
+                        self.karaoke_word = self.karaoke_word_by_clip
+                            .get(clip_id).copied().unwrap_or(0);
+                    }
                 }
             }
             CaptionsMsg::EditorText(text) => self.editor.draft = text,
@@ -412,9 +426,14 @@ impl CaptionsPane {
             }
             CaptionsMsg::KaraokeMode(index) => self.set_karaoke_mode(studio, index),
             CaptionsMsg::KaraokeColor(index) => self.set_karaoke_color(studio, index),
-            CaptionsMsg::KaraokeEstimate => self.estimate_karaoke_words(studio),
+            CaptionsMsg::KaraokeEstimate => self.estimate_karaoke_words(studio, false),
+            CaptionsMsg::KaraokeReestimate => self.estimate_karaoke_words(studio, true),
+            CaptionsMsg::KaraokeApplyTrackStyle => self.apply_karaoke_track_style(studio),
             CaptionsMsg::KaraokeSelectWord(index) => {
                 self.karaoke_word = index.max(0) as usize;
+                if let Some(Target::Caption { clip_id }) = &self.editor.selected {
+                    self.karaoke_word_by_clip.insert(clip_id.clone(), self.karaoke_word);
+                }
             }
             CaptionsMsg::KaraokeWordStart(value) if value.is_finite() => {
                 self.edit_karaoke_word_time(studio, true, f64::from(value));
@@ -586,9 +605,13 @@ impl CaptionsPane {
         // confirmation owns that choice.
         let editor = std::mem::take(&mut self.editor);
         let rules = self.rules;
+        let karaoke_word = self.karaoke_word;
+        let karaoke_word_by_clip = std::mem::take(&mut self.karaoke_word_by_clip);
         *self = CaptionsPane {
             open: true,
             editor,
+            karaoke_word,
+            karaoke_word_by_clip,
             from_voice,
             clip,
             chosen_with: studio.sole_selection(),
@@ -763,10 +786,14 @@ impl CaptionsPane {
             return;
         }
         studio.apply(Command::SetCaptionMetadata {
-            clip_id,
-            metadata: Some(metadata),
+            clip_id: clip_id.clone(),
+            metadata: Some(metadata.clone()),
         });
-        self.editor.message.clear();
+        if studio.clip(&clip_id).and_then(|clip| clip.caption_metadata()) == Some(metadata) {
+            self.editor.message.clear();
+        } else {
+            self.editor.message = "No se guardaron los cambios. Comprueba la pista y los tiempos.".into();
+        }
     }
 
     fn set_karaoke_mode(&mut self, studio: &mut Studio, index: i32) {
@@ -790,8 +817,12 @@ impl CaptionsPane {
 
     /// A character-proportional *estimate*, explicitly labelled Estimated
     /// rather than pretending Whisper provided aligned per-word timestamps.
-    fn estimate_karaoke_words(&mut self, studio: &mut Studio) {
+    fn estimate_karaoke_words(&mut self, studio: &mut Studio, overwrite: bool) {
         let Some((id, mut meta, content, duration)) = self.karaoke_target(studio) else { return; };
+        if !overwrite && !meta.words.is_empty() {
+            self.editor.message = "Ya existen tiempos por palabra. No se reemplazan sin elegir Recalcular.".into();
+            return;
+        }
         if !duration.is_finite() || duration <= 0.0 {
             self.editor.message = "El subtítulo no tiene una duración válida.".into();
             return;
@@ -814,19 +845,34 @@ impl CaptionsPane {
             self.editor.message = "Primero calcula los tiempos de las palabras del texto actual.".into();
             return;
         }
-        let index = self.karaoke_word;
-        let previous_end = if index == 0 { 0.0 } else { meta.words[index - 1].end };
-        let next_start = meta.words.get(index + 1).map_or(duration, |w| w.start);
-        let word = &mut meta.words[index];
-        if start { word.start = value; } else { word.end = value; }
-        if !value.is_finite() || word.start < previous_end || word.end > next_start
-            || word.end > duration || word.start < 0.0 || word.end <= word.start
-        {
-            self.editor.message = "El intervalo debe estar dentro del subtítulo y no solaparse.".into();
+        if !move_caption_word_boundary(&mut meta.words, self.karaoke_word, start, value, duration) {
+            self.editor.message = "Límite inválido: comprueba duración y palabras vecinas. No se cambió nada.".into();
             return;
         }
         meta.alignment = CaptionAlignment::Edited; // partially edited, not certified exact
         self.save_karaoke(studio, id, meta);
+    }
+
+    /// Apply the chosen caption's text appearance and karaoke mode/color
+    /// only to actual subtitles on its own timeline track. Each caption
+    /// retains its exact text, per-word timing and alignment provenance.
+    /// This is a single undoable batch, not one command per word or clip.
+    fn apply_karaoke_track_style(&mut self, studio: &mut Studio) {
+        let Some((id, _, _, _)) = self.karaoke_target(studio) else { return; };
+        let (commands, updated) = caption_track_style_commands(&studio.timeline().clips, &id);
+        if commands.is_empty() {
+            self.editor.message = if updated == 0 {
+                "No hay otros subtítulos en la pista seleccionada.".into()
+            } else {
+                "Toda la pista ya utiliza estos ajustes.".into()
+            };
+            return;
+        }
+        let target_count = updated;
+        studio.apply(Command::Batch { commands });
+        self.editor.message = format!(
+            "Se aplicó el estilo a la pista ({target_count} subtítulos revisados). Cada palabra conserva sus tiempos."
+        );
     }
 
     /// The sheet as Slint shows it.
@@ -936,6 +982,52 @@ impl CaptionsPane {
             message: self.message.as_str().into(),
         }
     }
+}
+
+/// Snapshot the selected caption's presentation and typographic appearance
+/// onto other identified captions sharing its track. Never copies words,
+/// timing, alignment, or plain titles. One batch is one undo step.
+fn caption_track_style_commands(
+    clips: &[concat_project::model::Clip], source_id: &str,
+) -> (Vec<Command>, usize) {
+    let Some(source) = clips.iter().find(|clip| clip.id == source_id) else {
+        return (Vec::new(), 0);
+    };
+    let (Some(source_meta), Some(source_style)) = (
+        source.caption_metadata(), source.text.as_ref(),
+    ) else {
+        return (Vec::new(), 0);
+    };
+    let mut commands = Vec::new();
+    let mut updated = 0;
+    for clip in clips.iter().filter(|clip| {
+        clip.id != source_id
+            && clip.track_id == source.track_id
+            && clip.caption_metadata().is_some()
+    }) {
+        let Some(mut meta) = clip.caption_metadata() else { continue; };
+        let Some(mut style) = clip.text.clone() else { continue; };
+        updated += 1;
+        let before = meta.clone();
+        meta.presentation = source_meta.presentation;
+        meta.active_color = source_meta.active_color.clone();
+        if meta != before {
+            commands.push(Command::SetCaptionMetadata {
+                clip_id: clip.id.clone(), metadata: Some(meta),
+            });
+        }
+        let before_style = style.clone();
+        let original_text = std::mem::take(&mut style.content);
+        style = source_style.clone();
+        style.content = original_text;
+        if style != before_style {
+            commands.push(Command::UpdateClip {
+                clip_id: clip.id.clone(),
+                patch: ClipPatch { text: Some(Some(style)), ..ClipPatch::default() },
+            });
+        }
+    }
+    (commands, updated)
 }
 
 /// Proportional clocks are a useful *draft only*; no speech alignment is
@@ -1251,6 +1343,65 @@ fn wrap_caption(sentence: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{script_captions, source_label};
+
+    #[test]
+    fn copying_caption_style_to_a_track_keeps_words_and_titles_undoable() {
+        use concat_project::{Command, Editor};
+        use concat_project::caption_data::{
+            CaptionAlignment, CaptionMetadata, CaptionPresentation, CaptionWord,
+        };
+        use concat_project::model::TextStyle;
+        let mut editor = Editor::new();
+        let make = |text: &str, at: f64, colour: &str| Command::AddTextClip {
+            track_id: Some("T1".into()), above: false, start: at,
+            style: Some(TextStyle {
+                content: text.into(), color: colour.into(), ..TextStyle::default()
+            }),
+            duration: Some(2.0), offset_y: None,
+        };
+        let a = editor.apply(make("Hola", 0.0, "#00ff00")).unwrap().created_id.unwrap();
+        let b = editor.apply(make("Mundo", 3.0, "#ffffff")).unwrap().created_id.unwrap();
+        let ordinary = editor.apply(make("TÍTULO", 6.0, "#123456"))
+            .unwrap().created_id.unwrap();
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: a.clone(),
+            metadata: Some(CaptionMetadata {
+                presentation: CaptionPresentation::KaraokeProgressive,
+                active_color: "#00EAFF".into(),
+                ..CaptionMetadata::default()
+            })
+        }).unwrap();
+        let original_words = vec![CaptionWord {id:"w1".into(),start:0.2,end:1.8}];
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: b.clone(),
+            metadata: Some(CaptionMetadata {
+                words: original_words.clone(),
+                alignment: CaptionAlignment::Edited,
+                ..CaptionMetadata::default()
+            })
+        }).unwrap();
+        let (changes, affected) = super::caption_track_style_commands(
+            &editor.project().active().clips, &a,
+        );
+        assert_eq!(affected, 1, "the ordinary title is not included");
+        assert_eq!(changes.len(), 2, "one mode and one typography change");
+        editor.apply(Command::Batch { commands: changes }).unwrap();
+        let caption = editor.project().active().clip(&b).unwrap();
+        let meta = caption.caption_metadata().unwrap();
+        assert_eq!(meta.presentation, CaptionPresentation::KaraokeProgressive);
+        assert_eq!(meta.active_color, "#00EAFF");
+        assert_eq!(meta.words, original_words);
+        assert_eq!(meta.alignment, CaptionAlignment::Edited);
+        assert_eq!(caption.text.as_ref().unwrap().content, "Mundo");
+        assert_eq!(caption.text.as_ref().unwrap().color, "#00ff00");
+        assert_eq!(editor.project().active().clip(&ordinary).unwrap()
+            .text.as_ref().unwrap().color, "#123456");
+        assert!(editor.undo());
+        let restored = editor.project().active().clip(&b).unwrap();
+        assert_eq!(restored.text.as_ref().unwrap().color, "#ffffff");
+        assert_eq!(restored.caption_metadata().unwrap().presentation, CaptionPresentation::Normal);
+        assert_eq!(restored.caption_metadata().unwrap().words, original_words);
+    }
 
     #[test]
     fn estimated_karaoke_words_are_monotonic_and_explicitly_non_aligned() {

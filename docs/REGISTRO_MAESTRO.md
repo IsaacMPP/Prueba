@@ -24,6 +24,8 @@
 
 **K2 Windows smoke: fallo confirmado y reparación de WGSL autorizada (24 oct 2026):** [CI #40151622185](https://github.com/IsaacMPP/Prueba/actions/runs/40151622185) terminó `failure`: el catálogo de efectos abortó al validar un shader por usar `active` (reservada en WGSL). Corrección mínima: sustituir por `word_is_active` en el paquete `concat.karaoke-highlight`. K1 [#40150719478](https://github.com/IsaacMPP/Prueba/actions/runs/40150719478) fue `success`; K2 exige **nuevo CI + smoke y pruebas reales**. Se mantienen exactamente 38 EJ, `main` intacta y PR #9 en borrador.
 
+**Rediseño subtítulos R1 (25 oct 2026, en validación):** el usuario reportó fallos reales de persistencia/tiempos y autorizó rediseñar el módulo con flujo tipo Premiere. Cambios de primer incremento: cálculo de límites compartidos sin solapes y transacción íntegra; estimación no destructiva y recalculado con confirmación; recordar selección por ID; copiar tipografía/modo/color a la pista en una sola acción deshacible sin tocar palabras, alineación, títulos ni otras pistas. Pruebas incorporadas. **NO completado**: master style vinculado a pista, panel integrado, división/unión de frases y karaoke de única palabra centrada con render exportado. CI Windows y pruebas manuales pendientes. Preservar 38 EJ; ver [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md).
+
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |

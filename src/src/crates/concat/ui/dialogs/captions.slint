@@ -121,6 +121,8 @@ export component CaptionsDialog inherits Modal {
     callback karaoke-mode(index: int);
     callback karaoke-color(index: int);
     callback karaoke-estimate();
+    callback karaoke-reestimate();
+    callback karaoke-apply-track-style();
     callback karaoke-word-selected(index: int);
     callback karaoke-word-start(value: float);
     callback karaoke-word-end(value: float);
@@ -140,6 +142,7 @@ export component CaptionsDialog inherits Modal {
     property <string> draft;
     property <string> edit-draft;
     property <bool> edit-typing;
+    property <bool> confirm-karaoke-reestimate: false;
     /// The script has the caret. Kept up here because the box lives under
     /// an `if`, and nothing outside one can reach into it.
     property <bool> typing;
@@ -180,6 +183,7 @@ export component CaptionsDialog inherits Modal {
                     current: root.data.editor-kind;
                     changed(index) => {
                         root.edit-typing = false;
+                        root.confirm-karaoke-reestimate = false;
                         root.editor-kind-changed(index);
                     }
                 }
@@ -194,6 +198,7 @@ export component CaptionsDialog inherits Modal {
                     enabled: root.data.editor-items.length > 0 && !root.data.editor-confirm;
                     changed(index) => {
                         root.edit-typing = false;
+                        root.confirm-karaoke-reestimate = false;
                         root.editor-selected(index);
                     }
                 }
@@ -307,16 +312,56 @@ export component CaptionsDialog inherits Modal {
                         changed(index) => { root.karaoke-color(index); }
                     }
                 }
+                Button {
+                    label: I18n.t("captions.karaokeApplyTrackStyle");
+                    enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                    clicked => { root.karaoke-apply-track-style(); }
+                }
+                Text {
+                    text: I18n.t("captions.karaokeApplyTrackHint");
+                    color: Theme.fg-dim;
+                    font-size: Theme.fs-sm;
+                    wrap: word-wrap;
+                }
                 Text {
                     text: root.data.karaoke-alignment;
                     color: Theme.fg-dim;
                     font-size: Theme.fs-sm;
                     wrap: word-wrap;
                 }
-                Button {
+                if !root.data.karaoke-has-times: Button {
                     label: I18n.t("captions.karaokeEstimateAction");
                     enabled: !root.data.editor-dirty && !root.data.editor-confirm;
                     clicked => { root.karaoke-estimate(); }
+                }
+                if root.data.karaoke-has-times && !root.confirm-karaoke-reestimate: Button {
+                    label: I18n.t("captions.karaokeReestimateAction");
+                    enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                    clicked => { root.confirm-karaoke-reestimate = true; }
+                }
+                if root.data.karaoke-has-times && root.confirm-karaoke-reestimate: VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: I18n.t("captions.karaokeReestimateWarning");
+                        wrap: word-wrap;
+                        color: Theme.fg;
+                        font-size: Theme.fs-sm;
+                    }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            label: I18n.t("common.cancel");
+                            clicked => { root.confirm-karaoke-reestimate = false; }
+                        }
+                        Button {
+                            label: I18n.t("captions.karaokeReestimateConfirm");
+                            enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                            clicked => {
+                                root.confirm-karaoke-reestimate = false;
+                                root.karaoke-reestimate();
+                            }
+                        }
+                    }
                 }
                 if root.data.karaoke-words.length > 0: DialogRow {
                     label: I18n.t("captions.karaokeWordLabel");
