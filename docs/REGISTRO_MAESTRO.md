@@ -1,6 +1,18 @@
 # Estudio Joven — Registro maestro de 38 compromisos
 
-**Actualizado:** 24 de octubre de 2026 (Fase 3A: corrección Slint y CI Windows aprobados; validación manual pendiente). **Fuente de verdad para las siguientes fases.**
+**Actualizado:** 25 de octubre de 2026. **Fuente de verdad de los 38 compromisos; leer primero el estado verificado actual siguiente.**
+
+## Resumen vigente — 25 octubre 2026: reconstrucción R1/R2 del editor de subtítulos
+
+**Último código comprobado:** rama `feature/fase3-editor-transcripcion-subtitulos`, HEAD `1beb48f79558aa881c61bbbfcb7162fcd77a5231`. **CI [#40166030711 SUCCESS](https://github.com/IsaacMPP/Prueba/actions/runs/40166030711)**: build Windows Rust/Slint, smoke Windows + Ivy Bridge, instaladores y [artefacto](https://github.com/IsaacMPP/Prueba/actions/runs/40166030711/artifacts/12589487966). Los fallos anteriores [#40165395448](https://github.com/IsaacMPP/Prueba/actions/runs/40165395448) y [#40165824490](https://github.com/IsaacMPP/Prueba/actions/runs/40165824490) son históricos y fueron supersedidos por el éxito reciente; no confundir «compiló» con «pasó prueba funcional de karaoke».
+
+**R1 en código:** edición de límites de tiempos, conservar correcciones sin recalcular salvo confirmación, selección de palabra por ID, copiar una sola vez estilo y modo a otros subtítulos de la pista con Undo y preservación de texto/tiempos. **R2 en código:** modo Palabra recorta y centra solo el vocablo activo mediante GPU en el mismo título; ruta de preview/export compartida. **No hay aún verificación manual del usuario de R1/R2 en Windows**, ni estilo maestro de pista enlazado al estilo Premiere, ni forced alignment, ni división/unión de subtítulos, ni panel acoplado. Mantener estos EJ en validación/pendientes.
+
+**Prioridad siguiente:** descargar [artefacto del CI aprobado](https://github.com/IsaacMPP/Prueba/actions/runs/40166030711/artifacts/12589487966) y probar en Windows con video y audio español: normal/progresivo/una palabra, posicionamiento, textos largos, pausa entre palabras, cambiar frase, no perder tiempos, recalcular con confirmación, aplicar a pista sin copiar texto, Undo, guardar/reabrir y exportar; registrar resultados y corregir fallos antes de ampliar alcance. **Exactamente 38 EJ sin alterar.** `main` intacta y PR #9 abierto/draft. Para enlaces y checklist detallado, ver `docs/CONTINUIDAD_CHATGPT.md`.
+
+---
+
+**Historial de estados anteriores (no sustituye al resumen vigente).**
 
 **Error histórico confirmado:** [GitHub Actions #40112515736](https://github.com/IsaacMPP/Prueba/actions/runs/40112515736) terminó en **failure**. Pasaron 171 pruebas Rust, pero el compilador Slint rechazó ocho declaraciones separadas con `;` en `src/src/crates/concat/ui/dialogs/captions.slint`, líneas 61–68: `CaptionsSheetData` necesita `,` como separador de campos. **Primero corregir ese error de sintaxis; luego compilar y revisar nuevos errores si aparecen.** No hay build F3 aprobado ni prueba manual, no fusionar PR #9. Leer [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md).
 

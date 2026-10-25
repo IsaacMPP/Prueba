@@ -4,6 +4,14 @@
 
 **Nombre y estrategia de producto vigentes (24 oct 2026):** **JA Video Studio** será el nombre público final del editor para PC. **JA Connect** designa la futura función de comunicación y procesamiento entre una PC que actúa como servidor privado y clientes móviles. El usuario desea construir una **Suite** posteriormente, pero **primero exige terminar y estabilizar el editor de video Windows**; Android/Connect y otras apps solo tras autorización expresa. No renombrar paquetes, rutas, proyectos ni instaladores durante Fase 3C; planificar migración cuando corresponda y preservar los 38 compromisos.
 
+## Estado actual de la ruta crítica — verificado 25 octubre 2026
+
+**R1/R2 publicados y compilación Windows aprobada:** último código `1beb48f`; [CI #40166030711 SUCCESS](https://github.com/IsaacMPP/Prueba/actions/runs/40166030711) pasó construcción, smoke Windows/Ivy Bridge, instaladores y artefacto. El modo de palabra única centrada **existe en código GPU**, y los controles de tiempos/apariencia fueron rediseñados, pero **las pruebas funcionales del usuario aún están pendientes**. No marcar EJ-016/EJ-017/EJ-037 terminados solo por CI. `main` y PR #9 draft sin fusionar. Guardar el historial anterior como contexto, pero consultar el estado nuevo en continuidad y registro.
+
+**Puerta de calidad inmediata:** probar en Windows la compilación actual con frases reales, cambiar entre subtítulos sin perder tiempos, edición de límites, recalcular solo con confirmación, aplicar estilo a pista sin sobrescribir texto, modo Palabra mostrando **exclusivamente** la palabra activa centrada, modo Progresivo, background, subtítulos de varias líneas, guardar/reabrir, Ctrl+Z y exportación idéntica a preview. Registrar fallas verificadas; corregirlas antes de ampliar alcance.
+
+**Desarrollo posterior aún pendiente:** verdadero estilo de pista enlazado, UI dedicada y selección múltiple, dividir/unir frases, edición de tiempo tipo Premiere con arrastre/snap, alineación palabra-audio, optimización Whisper/GPU, animaciones; mantener orden y 38 EJ. Trabajo JA Connect/Android/Suite/LOG pospuesto.
+
 ## Orden de construcción y condiciones de paso
 
 **Decisión vinculante 24 oct 2026 — versión móvil diferida:** completar, estabilizar y validar la versión PC/Windows en todas las puertas relevantes de esta ruta antes de iniciar trabajo Android. **Requiere autorización expresa del usuario cuando la versión PC esté estable y funcional.** No iniciar APK, CI Android ni rama móvil por ahora. La evaluación de la base Concat Android queda como antecedente de factibilidad, no como entrega. No agregar a los 38 pendientes ni fusionar PR sin autorización.
@@ -66,4 +74,4 @@
 
 ## Entrega más próxima
 
-Cerrar la validación automática del PR #9; si aparecen errores de compilación, corregirlos. Después hacer prueba Windows guiada sobre el instalador y atender observaciones, sin saltar a karaoke todavía.
+La **validación automática de R1/R2 ya pasó** en [#40166030711](https://github.com/IsaacMPP/Prueba/actions/runs/40166030711); el siguiente paso es **validación manual del instalador actual con material real en Windows**, en particular el modo Palabra centrada, preservación de tiempos y comparación preview/export. Corregir fallos reales antes de marcar completados los criterios de aceptación o iniciar nuevos módulos.
