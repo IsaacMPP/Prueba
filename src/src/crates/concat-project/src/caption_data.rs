@@ -82,6 +82,19 @@ pub enum CaptionPresentation {
     KaraokeWord,
 }
 
+/// How the subtitle word clocks were obtained. Estimated clocks are never
+/// presented as force-aligned audio. An edit means at least one clock has
+/// been adjusted by hand; the whole phrase is not thereby verified.
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CaptionAlignment {
+    #[default]
+    Unaligned,
+    Estimated,
+    Edited,
+}
+
 /// Seconds relative to the subtitle clip, independently from transcript clocks.
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -104,6 +117,8 @@ pub struct CaptionMetadata {
     pub active_color: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub words: Vec<CaptionWord>,
+    #[serde(default)]
+    pub alignment: CaptionAlignment,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transcript_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -116,6 +131,7 @@ impl Default for CaptionMetadata {
             presentation: CaptionPresentation::Normal,
             active_color: default_active_color(),
             words: Vec::new(),
+            alignment: CaptionAlignment::Unaligned,
             transcript_id: None,
             segment_id: None,
         }
@@ -149,6 +165,51 @@ impl CaptionMetadata {
     pub fn valid_for_clip(&self, duration: f64) -> bool {
         self.valid() && duration.is_finite() && duration > 0.0
     }
+}
+
+/// Moves a start/end word boundary inside a subtitle. When neighbouring
+/// words touch, their common boundary moves together, like a trim handle
+/// rather than rejecting every adjustment as an overlap. Gaps remain gaps.
+/// On any invalid request the entire slice remains unchanged.
+pub fn move_caption_word_boundary(
+    words: &mut [CaptionWord], index: usize, change_start: bool, value: f64, duration: f64,
+) -> bool {
+    if words.is_empty() || index >= words.len()
+        || !duration.is_finite() || duration <= 0.0
+        || !value.is_finite() || value < 0.0 || value > duration
+    {
+        return false;
+    }
+    let mut draft = words.to_vec();
+    const ADJACENT_EPSILON: f64 = 0.00001;
+    if change_start {
+        if index > 0
+            && (draft[index - 1].end - draft[index].start).abs() < ADJACENT_EPSILON
+        {
+            draft[index - 1].end = value;
+        }
+        draft[index].start = value;
+    } else {
+        if index + 1 < draft.len()
+            && (draft[index].end - draft[index + 1].start).abs() < ADJACENT_EPSILON
+        {
+            draft[index + 1].start = value;
+        }
+        draft[index].end = value;
+    }
+    let mut prev_end = 0.0;
+    for word in &draft {
+        if !interval(word.start, word.end)
+            || word.start < prev_end - ADJACENT_EPSILON
+            || word.end > duration + ADJACENT_EPSILON
+        {
+            return false;
+        }
+        prev_end = word.end;
+    }
+    if words == draft { return true; }
+    words.clone_from_slice(&draft);
+    true
 }
 
 fn default_active_color() -> String { "#FFE040".into() }
@@ -271,6 +332,85 @@ mod tests {
     }
 
     #[test]
+    fn a_shared_word_boundary_ripples_to_its_neighbour_atomically() {
+        let mut words = vec![
+            CaptionWord { id: "one".into(), start: 0.0, end: 1.0 },
+            CaptionWord { id: "two".into(), start: 1.0, end: 2.0 },
+            CaptionWord { id: "three".into(), start: 2.0, end: 3.0 },
+        ];
+        assert!(move_caption_word_boundary(&mut words, 1, true, 1.3, 3.0));
+        assert_eq!(words[0].end, 1.3);
+        assert_eq!(words[1].start, 1.3);
+        assert_eq!(words[1].end, 2.0);
+        assert!(move_caption_word_boundary(&mut words, 1, false, 2.4, 3.0));
+        assert_eq!(words[1].end, 2.4);
+        assert_eq!(words[2].start, 2.4);
+        let stored = words.clone();
+        assert!(!move_caption_word_boundary(&mut words, 1, false, 3.1, 3.0));
+        assert!(!move_caption_word_boundary(&mut words, 1, true, -0.1, 3.0));
+        assert!(!move_caption_word_boundary(&mut words, 1, false, 3.0, 3.0));
+        assert_eq!(words, stored, "invalid edits cannot partially overwrite a timing");
+    }
+
+    #[test]
+    fn editing_a_gapped_word_does_not_stretch_its_neighbours() {
+        let mut words = vec![
+            CaptionWord { id: "one".into(), start: 0.0, end: 0.6 },
+            CaptionWord { id: "two".into(), start: 1.0, end: 1.8 },
+        ];
+        assert!(move_caption_word_boundary(&mut words, 1, true, 0.8, 2.0));
+        assert_eq!(words[0].end, 0.6);
+        assert!(!move_caption_word_boundary(&mut words, 1, true, 0.5, 2.0));
+        assert_eq!(words[1].start, 0.8);
+        // Historical projects with overlapping clocks must still load:
+        // only an attempted edit is rejected, leaving the original untouched.
+        let mut old_words = vec![
+            CaptionWord { id: "a".into(), start: 0.0, end: 1.0 },
+            CaptionWord { id: "b".into(), start: 0.7, end: 2.0 },
+        ];
+        let before = old_words.clone();
+        assert!(!move_caption_word_boundary(&mut old_words, 0, true, 0.1, 2.0));
+        assert_eq!(old_words, before);
+    }
+
+    #[test]
+    fn word_alignment_provenance_survives_project_round_trip_and_mode_switch() {
+        let mut editor = Editor::new();
+        let id = editor.apply(Command::AddTextClip {
+            track_id: Some("T1".into()), above: false, start: 0.0,
+            style: Some(TextStyle { content: "Hola mundo".into(), ..TextStyle::default() }),
+            duration: Some(2.0), offset_y: None,
+        }).unwrap().created_id.unwrap();
+        let mut metadata = CaptionMetadata {
+            alignment: CaptionAlignment::Estimated,
+            words: vec![
+                CaptionWord { id: "w1".into(), start: 0.0, end: 0.8 },
+                CaptionWord { id: "w2".into(), start: 0.8, end: 2.0 },
+            ],
+            ..CaptionMetadata::default()
+        };
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: id.clone(), metadata: Some(metadata.clone())
+        }).unwrap();
+        metadata.presentation = CaptionPresentation::KaraokeProgressive;
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: id.clone(), metadata: Some(metadata.clone())
+        }).unwrap();
+        metadata.presentation = CaptionPresentation::Normal;
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: id.clone(), metadata: Some(metadata.clone())
+        }).unwrap();
+        let reloaded = from_document(&to_document(&settings(), editor.project())).unwrap();
+        let clip = reloaded.active().clips.iter().find(|c| c.id == id).unwrap();
+        assert_eq!(clip.caption_metadata(), Some(metadata));
+        assert_eq!(clip.caption_metadata().unwrap().alignment, CaptionAlignment::Estimated);
+        assert!(editor.undo());
+        assert_eq!(editor.project().active().clips.iter().find(|c| c.id == id)
+            .unwrap().caption_metadata().unwrap().presentation,
+            CaptionPresentation::KaraokeProgressive);
+    }
+
+    #[test]
     fn each_text_preserves_its_mode_and_word_times() {
         let mut editor = Editor::new();
         let make = |text: &str| Command::AddTextClip {
@@ -368,6 +508,50 @@ mod tests {
         let cues = caption_cues(editor.project().active(), Some("T1"));
         assert_eq!(cues.len(), 1);
         assert_eq!(cues[0].text, "Subtítulo");
+    }
+
+    #[test]
+    fn correcting_transcript_and_subtitle_is_one_undo_step_and_round_trips() {
+        use crate::commands::ClipPatch;
+        let mut editor = Editor::new();
+        let original = transcript();
+        let clip_id = editor.apply(Command::Batch { commands: vec![
+            Command::UpsertTranscript { transcript: original.clone() },
+            Command::AddCaptionClip {
+                track_id: Some("T1".into()), above: false, start: 0.2,
+                style: Some(TextStyle { content: "Hola mundo".into(), ..TextStyle::default() }),
+                duration: Some(1.0), offset_y: None,
+                metadata: CaptionMetadata {
+                    transcript_id: Some("tx1".into()),
+                    segment_id: Some("seg1".into()), ..CaptionMetadata::default()
+                },
+            },
+        ] }).unwrap().created_id.expect("subtitle is created");
+        let mut corrected = original.clone();
+        corrected.segments[0].text = "Hola, comunidad".into();
+        let clip = editor.project().active().clip(&clip_id).expect("caption");
+        let mut style = clip.text.clone().unwrap();
+        style.content = "Hola, comunidad".into();
+        editor.apply(Command::Batch { commands: vec![
+            Command::UpsertTranscript { transcript: corrected.clone() },
+            Command::UpdateClip {
+                clip_id: clip_id.clone(),
+                patch: ClipPatch {
+                    text: Some(Some(style)), ..ClipPatch::default()
+                },
+            },
+        ] }).unwrap();
+        let reopened = from_document(&to_document(&settings(), editor.project())).unwrap();
+        assert_eq!(reopened.transcript("tx1").unwrap().segments[0].text,
+            "Hola, comunidad");
+        assert_eq!(reopened.active().clip(&clip_id).unwrap().text.as_ref().unwrap().content,
+            "Hola, comunidad");
+        assert!(editor.undo());
+        assert_eq!(editor.project().transcript("tx1"), Some(original));
+        assert_eq!(editor.project().active().clip(&clip_id).unwrap().text.as_ref().unwrap().content,
+            "Hola mundo");
+        assert!(editor.redo());
+        assert_eq!(editor.project().transcript("tx1"), Some(corrected));
     }
 
     #[test]

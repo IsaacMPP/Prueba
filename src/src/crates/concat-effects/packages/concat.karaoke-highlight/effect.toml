@@ -1,0 +1,89 @@
+format = 2
+
+[effect]
+id = "concat.karaoke-highlight"
+name = "Karaoke Highlight (Internal)"
+kind = "filter"
+category = "Technical"
+order = 999
+description = "Internal per-word highlight; the host provides timed word keys and reveal order."
+
+[[param]]
+key = "cursor"
+label = "Word clock"
+min = -1
+max = 255
+default = -1
+animate = true
+
+[[param]]
+key = "word_count"
+label = "Word count"
+min = 1
+max = 128
+default = 1
+
+[[param]]
+key = "mode"
+label = "Karaoke mode"
+min = 0
+max = 2
+default = 0
+
+[[param]]
+key = "red"
+label = "Highlight red"
+min = 0
+max = 1
+default = 1
+
+[[param]]
+key = "green"
+label = "Highlight green"
+min = 0
+max = 1
+default = 0.8784314
+
+[[param]]
+key = "blue"
+label = "Highlight blue"
+min = 0
+max = 1
+default = 0.2509804
+
+
+[[param]]
+key = "word_x"
+label = "Word center X"
+min = 0
+max = 1
+default = 0.5
+animate = true
+
+[[param]]
+key = "word_y"
+label = "Word center Y"
+min = 0
+max = 1
+default = 0.5
+animate = true
+
+[[param]]
+key = "word_half_w"
+label = "Word half width"
+min = 0
+max = 1
+default = 0.5
+animate = true
+
+[[param]]
+key = "word_half_h"
+label = "Word half height"
+min = 0
+max = 1
+default = 0.5
+animate = true
+
+[wgsl]
+entry = "effect.wgsl"
+space = "display"

@@ -444,8 +444,10 @@ export component Progress inherits Rectangle {
         y: 0;
         // Never thinner than it is tall once it has begun, so its end is
         // round from the first step.
+        // "shown" already interpolates on animation-tick(). A second
+        // width animation restarts every frame, leaving the fill behind
+        // the percentage displayed by the caller.
         width: root.shown > 0 ? Math.max(parent.height, parent.width * root.shown) : 0px;
-        animate width { duration: 280ms; easing: ease-out; }
         height: parent.height;
         border-radius: self.height / 2;
         background: root.done ? Theme.green : Theme.accent;

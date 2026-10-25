@@ -2075,6 +2075,24 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
     app.on_captions_size_changed(on_window!(|state, index: i32| {
         state.handle(Msg::Captions(CaptionsMsg::SizeChanged(index)));
     }));
+    app.on_captions_rules_layout(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesLayout(index)));
+    }));
+    app.on_captions_rules_chars(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesChars(value)));
+    }));
+    app.on_captions_rules_words(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesWords(value)));
+    }));
+    app.on_captions_rules_min_seconds(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesMinSeconds(value)));
+    }));
+    app.on_captions_rules_max_seconds(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesMaxSeconds(value)));
+    }));
+    app.on_captions_rules_gap_frames(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::RulesGapFrames(value)));
+    }));
     app.on_captions_begin(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::Begin));
     }));
@@ -2086,6 +2104,51 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
     }));
     app.on_captions_export_srt(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::ExportSrt));
+    }));
+    app.on_captions_editor_tab_changed(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorTab(index)));
+    }));
+    app.on_captions_editor_kind_changed(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorKind(index)));
+    }));
+    app.on_captions_editor_selected(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorSelect(index)));
+    }));
+    app.on_captions_editor_text_edited(on_window!(|state, text: SharedString| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorText(text.to_string())));
+    }));
+    app.on_captions_editor_apply(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorApply));
+    }));
+    app.on_captions_editor_discard(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorDiscard));
+    }));
+    app.on_captions_editor_stay(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::EditorStay));
+    }));
+    app.on_captions_karaoke_mode(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeMode(index)));
+    }));
+    app.on_captions_karaoke_color(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeColor(index)));
+    }));
+    app.on_captions_karaoke_estimate(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeEstimate));
+    }));
+    app.on_captions_karaoke_reestimate(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeReestimate));
+    }));
+    app.on_captions_karaoke_apply_track_style(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeApplyTrackStyle));
+    }));
+    app.on_captions_karaoke_word_selected(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeSelectWord(index)));
+    }));
+    app.on_captions_karaoke_word_start(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeWordStart(value)));
+    }));
+    app.on_captions_karaoke_word_end(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeWordEnd(value)));
     }));
     app.on_speech_closed(on_window!(|state| {
         state.handle(Msg::Speech(SpeechMsg::Close));

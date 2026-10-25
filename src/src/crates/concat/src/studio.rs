@@ -4069,6 +4069,20 @@ impl Studio {
         (self.selection.len() == 1).then(|| self.selection[0].clone())
     }
 
+    /// The captions editor selects the actual subtitle clip, using the same
+    /// original Text Inspector as ordinary titles. Never selects a title
+    /// just because it shares a lane with captions.
+    pub fn focus_caption_clip(&mut self, id: &str) {
+        let Some(clip) = self.clip(id).filter(|clip| clip.caption_metadata().is_some()) else {
+            return;
+        };
+        let at = clip.start as f32;
+        self.flush_commit();
+        self.transition_selected = None;
+        self.selection = vec![id.to_owned()];
+        self.seek(at);
+    }
+
     /// The look being shown over the picture, by id, while one is.
     pub fn audition_of(&self) -> Option<&str> {
         self.audition.as_deref()
@@ -11034,7 +11048,7 @@ impl Studio {
                 starred,
                 &self.look_art,
                 &self.card_paths,
-                |package| !is_lut(package),
+                |package| !is_lut(package) && package.id() != "concat.karaoke-highlight",
             );
             sync(&models.filter_groups, groups);
             sync(&models.catalogue_filters, entries);

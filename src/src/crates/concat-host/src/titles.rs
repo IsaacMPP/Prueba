@@ -25,12 +25,116 @@ use concat_core::frame::Frame;
 use concat_core::shader::RevealMap;
 
 use concat_export::{ClipKind, ExportClip};
+use concat_project::caption_data::CaptionPresentation;
 use concat_project::model::{
-    ClipKind as ModelClipKind, Project, ShapeKind, ShapeStyle, TextAlign, TextStyle,
+    AppliedFilter, Clip as ModelClip, ClipKind as ModelClipKind, KeyEase, ParamKey,
+    Project, ShapeKind, ShapeStyle, TextAlign, TextStyle,
 };
 use concat_text::{Align, Figure, Fonts, TitleStyle, WordRect};
 
 use crate::dirs::AppDirs;
+
+/// A temporary, GPU-rendered treatment for an identified caption.
+/// The saved timeline continues to contain exactly ONE editable Text clip.
+/// Only its normal flattening to an ExportClip adds this filter, so the
+/// monitor and final render share one implementation. No word receives an
+/// extra project clip or an independent title raster.
+const KARAOKE_EFFECT: &str = "concat.karaoke-highlight";
+
+fn timed_karaoke_filter(clip: &ModelClip, art: &Art) -> Option<AppliedFilter> {
+    let meta = clip.caption_metadata()?;
+    let mode = match meta.presentation {
+        CaptionPresentation::Normal => return None,
+        CaptionPresentation::KaraokeProgressive => 1.0,
+        CaptionPresentation::KaraokeWord => 2.0,
+    };
+    let text = &clip.text.as_ref()?.content;
+    let count = text.split_whitespace().count();
+    let seconds = clip.duration;
+    if (mode > 1.5 && art.word_boxes.len() != count)
+        || count == 0 || count > 128 || meta.words.len() != count
+        || !seconds.is_finite() || seconds <= 0.0
+    {
+        // A changed text must not be animated with stale word clocks.
+        return None;
+    }
+
+    // The project may have been trimmed since its word clocks were saved.
+    // Never apply misleading highlighting when the clock is out of range
+    // or overlaps a neighbour; editing the clock can restore it later.
+    let mut previous_end = 0.0_f64;
+    for word in &meta.words {
+        if word.start < previous_end || word.end > seconds
+            || word.start < 0.0 || !word.start.is_finite() || !word.end.is_finite()
+        {
+            return None;
+        }
+        previous_end = word.end;
+    }
+
+    let mut filter = AppliedFilter::new(KARAOKE_EFFECT);
+    filter.params.insert("mode".into(), mode);
+    filter.params.insert("word_count".into(), count as f64);
+    let hex = meta.active_color.trim_start_matches('#');
+    for (name, index) in [("red", 0), ("green", 2), ("blue", 4)] {
+        let component = u8::from_str_radix(&hex[index..index + 2], 16).ok()?;
+        filter.params.insert(name.into(), f64::from(component) / 255.0);
+    }
+
+    // Slot 2*i is active word i; 2*i+1 means silence after word i.
+    // Linear keys between consecutive integers are floored by the shader,
+    // which means the value changes exactly at the next word boundary.
+    // A tiny interval before adjacent word starts avoids equal-time keys
+    // that would otherwise select the previous word for one rendered frame.
+    let mut keys = Vec::<ParamKey>::with_capacity(count * 2 + 1);
+    if meta.words[0].start > 0.0 {
+        keys.push(ParamKey { at: 0.0, value: -1.0, ease: KeyEase::LINEAR });
+    }
+    for (i, word) in meta.words.iter().enumerate() {
+        let at = (word.start / seconds).clamp(0.0, 1.0);
+        keys.push(ParamKey {
+            at, value: (2 * i) as f64, ease: KeyEase::LINEAR,
+        });
+        let end = if let Some(next) = meta.words.get(i + 1) {
+            if (next.start - word.end).abs() <= 1e-8 {
+                (word.end - (word.end - word.start).min(0.000001)).max(word.start)
+            } else {
+                word.end
+            }
+        } else { word.end };
+        keys.push(ParamKey {
+            at: (end / seconds).clamp(0.0, 1.0),
+            value: (2 * i + 1) as f64,
+            ease: KeyEase::LINEAR,
+        });
+    }
+    filter.keys.insert("cursor".into(), keys);
+    if mode > 1.5 {
+        // The chosen word switches instantly to the centre of the original
+        // title canvas; no per-word project clips or new raster resources.
+        for (field, component) in [
+            ("word_x", 0), ("word_y", 1), ("word_half_w", 2), ("word_half_h", 3)
+        ] {
+            let mut values = Vec::with_capacity(count * 2);
+            let mut previous = art.word_boxes[0][component];
+            values.push(ParamKey { at: 0.0, value: previous, ease: KeyEase::LINEAR });
+            for (index, word) in meta.words.iter().enumerate().skip(1) {
+                let time = (word.start / seconds).clamp(0.0, 1.0);
+                let epsilon = (0.000001 / seconds).min(time / 2.0);
+                values.push(ParamKey {
+                    at: time - epsilon, value: previous, ease: KeyEase::LINEAR,
+                });
+                previous = art.word_boxes[index][component];
+                values.push(ParamKey {
+                    at: time, value: previous, ease: KeyEase::LINEAR,
+                });
+            }
+            filter.params.insert(field.into(), art.word_boxes[0][component]);
+            filter.keys.insert(field.into(), values);
+        }
+    }
+    Some(filter)
+}
 
 /// One title or shape, ready for the compositor.
 #[derive(Clone)]
@@ -68,6 +172,8 @@ struct Art {
     /// The title's per-word reveal order, baked once here rather than on
     /// every clip build - see `concat_core::RevealMap`.
     reveal: Arc<RevealMap>,
+    /// Centre x/y and half-size in normalized canvas coordinates, per word.
+    word_boxes: Vec<[f64; 4]>,
 }
 
 /// The title painter and its cache.
@@ -272,7 +378,13 @@ impl Titles {
                     flip_h: clip.flip_h,
                     flip_v: clip.flip_v,
                     blend: clip.blend.clone(),
-                    effects: clip.video_effects.clone(),
+                    effects: {
+                        let mut effects = clip.video_effects.clone();
+                        if let Some(highlight) = timed_karaoke_filter(clip, &art) {
+                            effects.push(highlight);
+                        }
+                        effects
+                    },
                     scale: clip.scale,
                     offset_x: clip.offset_x,
                     offset_y: clip.offset_y,
@@ -348,6 +460,7 @@ impl Titles {
             block: (rendered.block_width, rendered.block_height),
             offset: (rendered.block_dx, rendered.block_dy),
             reveal: reveal_of(&rendered.words, width, height),
+            word_boxes: word_boxes(&rendered.words, width, height),
         };
         let frame = Arc::new(
             Frame::from_rgba(rendered.width, rendered.height, rendered.rgba)
@@ -410,6 +523,7 @@ impl Titles {
             block: (rendered.block_width, rendered.block_height),
             offset: (rendered.block_dx, rendered.block_dy),
             reveal: reveal_of(&rendered.words, width, height),
+            word_boxes: word_boxes(&rendered.words, width, height),
         };
         let words: Vec<String> = rendered
             .words
@@ -545,7 +659,28 @@ fn read_block(side: &Path, width: u32, height: u32) -> Option<Art> {
         ),
         offset: (offset("x"), offset("y")),
         reveal: Arc::new(RevealMap::from_rects(width, height, &rects)),
+        word_boxes: word_boxes_from_rects(&rects, width, height),
     })
+}
+
+/// Word bounding boxes are already produced by the font engine and read
+/// from cached image sidecars. The GPU uses these to crop/recenter one word.
+fn word_boxes(words: &[WordRect], width: u32, height: u32) -> Vec<[f64; 4]> {
+    let rects: Vec<_> = words.iter().map(|w| (w.x, w.y, w.width, w.height)).collect();
+    word_boxes_from_rects(&rects, width, height)
+}
+
+fn word_boxes_from_rects(
+    rects: &[(i32, i32, u32, u32)], width: u32, height: u32,
+) -> Vec<[f64; 4]> {
+    let width = f64::from(width.max(1));
+    let height = f64::from(height.max(1));
+    rects.iter().map(|&(x, y, w, h)| [
+        (f64::from(x) + f64::from(w) / 2.0) / width,
+        (f64::from(y) + f64::from(h) / 2.0) / height,
+        (f64::from(w) / 2.0 + 1.0) / width,
+        (f64::from(h) / 2.0 + 1.0) / height,
+    ]).collect()
 }
 
 /// A title's per-word reveal map, baked from the boxes its layout left
@@ -609,6 +744,59 @@ fn shape_style(style: &ShapeStyle) -> concat_text::ShapeStyle {
 mod tests {
     use super::*;
     use concat_project::{Command, Editor};
+    #[test]
+    fn karaoke_is_one_native_title_with_preview_export_identical_filter() {
+        use concat_project::caption_data::{CaptionAlignment, CaptionMetadata, CaptionWord};
+        let mut editor = Editor::new();
+        let id = editor.apply(Command::AddTextClip {
+            track_id: None, above: false, start: 0.0,
+            style: Some(TextStyle { content: "Hola mundo".into(), ..TextStyle::default() }),
+            duration: Some(2.0), offset_y: None,
+        }).unwrap().created_id.unwrap();
+        let normal = editor.project().active().clip(&id).unwrap();
+        assert!(timed_karaoke_filter(normal).is_none());
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: id.clone(), metadata: Some(CaptionMetadata {
+                presentation: CaptionPresentation::KaraokeWord,
+                alignment: CaptionAlignment::Estimated,
+                words: vec![
+                    CaptionWord { id: "w1".into(), start: 0.0, end: 1.0 },
+                    CaptionWord { id: "w2".into(), start: 1.0, end: 2.0 },
+                ],
+                ..CaptionMetadata::default()
+            }),
+        }).unwrap();
+        let clip = editor.project().active().clip(&id).unwrap();
+        let sample_art = Art {
+            block: (640, 360), offset: (0, 0),
+            reveal: Arc::new(RevealMap::from_rects(
+                640, 360, &[(100, 100, 120, 30), (300, 100, 100, 30)]
+            )),
+            word_boxes: word_boxes_from_rects(
+                &[(100, 100, 120, 30), (300, 100, 100, 30)], 640, 360
+            ),
+        };
+        let effect = timed_karaoke_filter(clip, &sample_art)
+            .expect("word clocks become a GPU treatment");
+        assert_eq!(effect.id, KARAOKE_EFFECT);
+        assert_eq!(effect.params["mode"], 2.0);
+        assert_eq!(effect.params["word_count"], 2.0);
+        assert!(effect.keys.contains_key("word_x"));
+        assert!(effect.keys.contains_key("word_half_w"));
+        assert!((effect.value_at("word_x", 0.5, 0.0) - 0.546875).abs() < 0.00001);
+        assert!(effect.value_at("cursor", 0.25, -1.0) >= 0.0);
+        // State at the second word boundary is the new active word.
+        assert_eq!(effect.value_at("cursor", 0.5, -1.0).floor(), 2.0);
+        let titles = Titles::new(&scratch("karaoke-visual"));
+        let preview = titles.clips_live(editor.project(), 640, 360);
+        let exported = titles.clips(editor.project(), 640, 360);
+        assert_eq!(preview.len(), 1);
+        assert_eq!(exported.len(), 1);
+        assert_eq!(preview[0].clip.effects, exported[0].clip.effects);
+        assert_eq!(preview[0].clip.effects.last().unwrap(), &effect);
+    }
+
+
 
     fn scratch(name: &str) -> AppDirs {
         let dir =
@@ -805,6 +993,7 @@ mod tests {
             block: (1, 1),
             offset: (0, 0),
             reveal: Arc::new(RevealMap::from_rects(1, 1, &[])),
+            word_boxes: Vec::new(),
         };
         let frame = || Arc::new(Frame::transparent(4, 4));
         let size = frame().pixels().len();

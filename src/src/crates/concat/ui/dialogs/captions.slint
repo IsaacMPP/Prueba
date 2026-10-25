@@ -8,6 +8,7 @@ import { Button, CopyChip, DialogRow, DialogSection, Modal, Progress } from "../
 import { SegmentedControl } from "../primitives/segmented-control.slint";
 import { Select } from "../primitives/select.slint";
 import { Switch } from "../inspector/controls.slint";
+import { NumberField } from "../primitives/number-field.slint";
 
 // Captions: what the tray's Captions tool opens.
 //
@@ -45,6 +46,13 @@ export struct CaptionsSheetData {
     placement: int,
     /// 0 Small, 1 Medium, 2 Large
     size: int,
+    // Caption readability controls, not appearance or karaoke state.
+    rules-layout: int,
+    rules-chars: float,
+    rules-words: float,
+    rules-min-seconds: float,
+    rules-max-seconds: float,
+    rules-gap-frames: float,
     running: bool,
     /// 0..1: where the transcription surely is.
     progress: float,
@@ -57,6 +65,25 @@ export struct CaptionsSheetData {
     left: float,
     /// What the run is doing, in words.
     stage: string,
+    // Estudio Joven native phrase editing; all changes originate in Rust.
+    editor-tab: int,
+    editor-kind: int,
+    editor-items: [string],
+    editor-selected: int,
+    editor-text: string,
+    editor-dirty: bool,
+    editor-confirm: bool,
+    editor-message: string,
+    /// Persistent mode and word timing of the selected native subtitle.
+    karaoke-enabled: bool,
+    karaoke-mode: int,
+    karaoke-color: int,
+    karaoke-words: [string],
+    karaoke-word-index: int,
+    karaoke-has-times: bool,
+    karaoke-word-start: float,
+    karaoke-word-end: float,
+    karaoke-alignment: string,
     /// A transcriber model is installed.
     ready: bool,
     /// Why the last run failed, when it did.
@@ -74,17 +101,38 @@ export component CaptionsDialog inherits Modal {
     callback model-changed(index: int);
     callback placement-changed(index: int);
     callback size-changed(index: int);
+    callback rules-layout(index: int);
+    callback rules-chars(value: float);
+    callback rules-words(value: float);
+    callback rules-min-seconds(value: float);
+    callback rules-max-seconds(value: float);
+    callback rules-gap-frames(value: float);
     callback begin();
     callback cancel();
     callback import-srt();
     callback export-srt();
+    callback editor-tab-changed(index: int);
+    callback editor-kind-changed(index: int);
+    callback editor-selected(index: int);
+    callback editor-text-edited(text: string);
+    callback editor-apply();
+    callback editor-discard();
+    callback editor-stay();
+    callback karaoke-mode(index: int);
+    callback karaoke-color(index: int);
+    callback karaoke-estimate();
+    callback karaoke-reestimate();
+    callback karaoke-apply-track-style();
+    callback karaoke-word-selected(index: int);
+    callback karaoke-word-start(value: float);
+    callback karaoke-word-end(value: float);
 
     property <bool> from-voice: root.data.from-voice;
 
     open: root.data.open;
     title: I18n.t("captions.captions");
     glyph: Glyph.text-mark;
-    surface-width: 480px;
+    surface-width: 540px;
     dismissable: !root.data.running;
 
     // The script being typed, held apart from `data.text` the way the Field
@@ -92,6 +140,9 @@ export component CaptionsDialog inherits Modal {
     // first keystroke, so the sheet re-seeds it when it opens and never
     // while it is being typed into.
     property <string> draft;
+    property <string> edit-draft;
+    property <bool> edit-typing;
+    property <bool> confirm-karaoke-reestimate: false;
     /// The script has the caret. Kept up here because the box lives under
     /// an `if`, and nothing outside one can reach into it.
     property <bool> typing;
@@ -99,11 +150,262 @@ export component CaptionsDialog inherits Modal {
         if (!root.typing) {
             root.draft = root.data.text;
         }
+        if (!root.edit-typing) {
+            root.edit-draft = root.data.editor-text;
+        }
     }
-    init => { root.draft = root.data.text; }
+    init => {
+        root.draft = root.data.text;
+        root.edit-draft = root.data.editor-text;
+    }
 
     VerticalLayout {
-        if !root.data.running && !root.from-voice: DialogSection {
+        if !root.data.running: DialogSection {
+            first: true;
+            title: "Estudio Joven";
+            SegmentedControl {
+                options: ["Generar", "Editar"];
+                current: root.data.editor-tab;
+                changed(index) => {
+                    root.edit-typing = false;
+                    root.editor-tab-changed(index);
+                }
+            }
+        }
+
+        if !root.data.running && root.data.editor-tab == 1: DialogSection {
+            title: "Transcripción y subtítulos";
+
+            DialogRow {
+                label: "Contenido";
+                SegmentedControl {
+                    options: ["Transcripción", "Subtítulos"];
+                    current: root.data.editor-kind;
+                    changed(index) => {
+                        root.edit-typing = false;
+                        root.confirm-karaoke-reestimate = false;
+                        root.editor-kind-changed(index);
+                    }
+                }
+            }
+
+            DialogRow {
+                label: "Frase";
+                Select {
+                    options: root.data.editor-items;
+                    current: root.data.editor-selected;
+                    placeholder: "No hay frases disponibles";
+                    enabled: root.data.editor-items.length > 0 && !root.data.editor-confirm;
+                    changed(index) => {
+                        root.edit-typing = false;
+                        root.confirm-karaoke-reestimate = false;
+                        root.editor-selected(index);
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 110px;
+                border-radius: Theme.r;
+                background: Theme.well;
+                border-width: 1px;
+                border-color: edit-field.has-focus ? Theme.accent : Theme.line;
+                clip: true;
+                edit-field := TextInput {
+                    x: 10px;
+                    y: 8px;
+                    width: parent.width - 20px;
+                    height: parent.height - 16px;
+                    text <=> root.edit-draft;
+                    enabled: root.data.editor-selected >= 0 && !root.data.editor-confirm;
+                    color: Theme.fg;
+                    font-size: Theme.fs-lg;
+                    single-line: false;
+                    wrap: word-wrap;
+                    selection-background-color: Theme.accent;
+                    selection-foreground-color: Theme.on-accent;
+                    changed has-focus => { root.edit-typing = self.has-focus; }
+                    edited => { root.editor-text-edited(self.text); }
+                }
+            }
+
+            if root.data.editor-message != "": Text {
+                text: root.data.editor-message;
+                color: Theme.danger;
+                wrap: word-wrap;
+                font-size: Theme.fs-sm;
+            }
+
+            if root.data.editor-confirm: VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "Tienes cambios sin aplicar. ¿Qué deseas hacer?";
+                    color: Theme.fg;
+                    font-size: Theme.fs;
+                    wrap: word-wrap;
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Button {
+                        label: "Aplicar";
+                        primary: true;
+                        clicked => { root.edit-typing = false; root.editor-apply(); }
+                    }
+                    Button {
+                        label: "Descartar";
+                        clicked => { root.edit-typing = false; root.editor-discard(); }
+                    }
+                    Button {
+                        label: "Seguir editando";
+                        ghost: true;
+                        clicked => { root.editor-stay(); }
+                    }
+                }
+            }
+
+            if !root.data.editor-confirm: HorizontalLayout {
+                spacing: 8px;
+                Button {
+                    label: "Aplicar cambios";
+                    primary: true;
+                    enabled: root.data.editor-selected >= 0 && root.data.editor-dirty;
+                    clicked => { root.edit-typing = false; root.editor-apply(); }
+                }
+                Button {
+                    label: "Descartar cambios";
+                    enabled: root.data.editor-selected >= 0 && root.data.editor-dirty;
+                    clicked => { root.edit-typing = false; root.editor-discard(); }
+                }
+            }
+
+            Text {
+                text: root.data.editor-kind == 0
+                    ? "Corrige una transcripción guardada. Si el subtítulo aún tiene el texto original, se actualizará junto con la frase."
+                    : "Cada subtítulo mantiene su estilo individual. La tipografía y los efectos se cambian en el inspector Texto original.";
+                color: Theme.fg-dim;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+
+            if root.data.editor-kind == 1 && root.data.karaoke-enabled: VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: I18n.t("captions.karaokeEditingTitle");
+                    font-weight: 600;
+                    color: Theme.fg;
+                }
+                DialogRow {
+                    label: I18n.t("captions.karaokeModeLabel");
+                    SegmentedControl {
+                        options: [I18n.t("captions.karaokeNormal"), I18n.t("captions.karaokeProgressive"), I18n.t("captions.karaokeWordMode")];
+                        current: root.data.karaoke-mode;
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(index) => { root.karaoke-mode(index); }
+                    }
+                }
+                DialogRow {
+                    label: I18n.t("captions.karaokeColorLabel");
+                    Select {
+                        options: [I18n.t("captions.karaokeYellow"), I18n.t("captions.karaokeCyan"), I18n.t("captions.karaokePink"), I18n.t("captions.karaokeGreen")];
+                        current: root.data.karaoke-color;
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(index) => { root.karaoke-color(index); }
+                    }
+                }
+                Button {
+                    label: I18n.t("captions.karaokeApplyTrackStyle");
+                    enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                    clicked => { root.karaoke-apply-track-style(); }
+                }
+                Text {
+                    text: I18n.t("captions.karaokeApplyTrackHint");
+                    color: Theme.fg-dim;
+                    font-size: Theme.fs-sm;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: root.data.karaoke-alignment;
+                    color: Theme.fg-dim;
+                    font-size: Theme.fs-sm;
+                    wrap: word-wrap;
+                }
+                if !root.data.karaoke-has-times: Button {
+                    label: I18n.t("captions.karaokeEstimateAction");
+                    enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                    clicked => { root.karaoke-estimate(); }
+                }
+                if root.data.karaoke-has-times && !root.confirm-karaoke-reestimate: Button {
+                    label: I18n.t("captions.karaokeReestimateAction");
+                    enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                    clicked => { root.confirm-karaoke-reestimate = true; }
+                }
+                if root.data.karaoke-has-times && root.confirm-karaoke-reestimate: VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: I18n.t("captions.karaokeReestimateWarning");
+                        wrap: word-wrap;
+                        color: Theme.fg;
+                        font-size: Theme.fs-sm;
+                    }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            label: I18n.t("common.cancel");
+                            clicked => { root.confirm-karaoke-reestimate = false; }
+                        }
+                        Button {
+                            label: I18n.t("captions.karaokeReestimateConfirm");
+                            enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                            clicked => {
+                                root.confirm-karaoke-reestimate = false;
+                                root.karaoke-reestimate();
+                            }
+                        }
+                    }
+                }
+                if root.data.karaoke-words.length > 0: DialogRow {
+                    label: I18n.t("captions.karaokeWordLabel");
+                    Select {
+                        options: root.data.karaoke-words;
+                        current: root.data.karaoke-word-index;
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(index) => { root.karaoke-word-selected(index); }
+                    }
+                }
+                if root.data.karaoke-has-times && root.data.karaoke-word-index >= 0: DialogRow {
+                    label: I18n.t("captions.karaokeStart");
+                    NumberField {
+                        value: root.data.karaoke-word-start;
+                        minimum: 0;
+                        precision: 3;
+                        step: 0.01;
+                        unit: "s";
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(value) => { root.karaoke-word-start(value); }
+                    }
+                }
+                if root.data.karaoke-has-times && root.data.karaoke-word-index >= 0: DialogRow {
+                    label: I18n.t("captions.karaokeEnd");
+                    NumberField {
+                        value: root.data.karaoke-word-end;
+                        minimum: 0;
+                        precision: 3;
+                        step: 0.01;
+                        unit: "s";
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(value) => { root.karaoke-word-end(value); }
+                    }
+                }
+                Text {
+                    text: I18n.t("captions.karaokeRenderInfo");
+                    color: Theme.fg-dim;
+                    font-size: Theme.fs-sm;
+                    wrap: word-wrap;
+                }
+            }
+        }
+
+        if !root.data.running && root.data.editor-tab == 0 && !root.from-voice: DialogSection {
             first: true;
             title: I18n.t("common.script");
 
@@ -158,7 +460,7 @@ export component CaptionsDialog inherits Modal {
         // are typed above it; on, they come from a clip's voice, chosen
         // under it. A row of its own rather than a DialogRow, whose label
         // column is too narrow for the words.
-        if !root.data.running: HorizontalLayout {
+        if !root.data.running && root.data.editor-tab == 0: HorizontalLayout {
             padding-left: 14px;
             padding-right: 14px;
             padding-top: 14px;
@@ -182,7 +484,7 @@ export component CaptionsDialog inherits Modal {
             }
         }
 
-        if !root.data.running && root.from-voice: DialogSection {
+        if !root.data.running && root.data.editor-tab == 0 && root.from-voice: DialogSection {
             first: true;
             title: I18n.t("common.transcriber");
 
@@ -216,7 +518,7 @@ export component CaptionsDialog inherits Modal {
             }
         }
 
-        if !root.data.running: DialogSection {
+        if !root.data.running && root.data.editor-tab == 0: DialogSection {
             title: I18n.t("captions.captions");
 
             DialogRow {
@@ -237,10 +539,86 @@ export component CaptionsDialog inherits Modal {
                 }
             }
 
+            if !root.from-voice: Text {
+                text: I18n.t("captions.oneTitlePerSentence");
+                color: Theme.fg-dim;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+        }
+
+        if !root.data.running && root.data.editor-tab == 0 && root.from-voice: DialogSection {
+            title: I18n.t("captions.segmentationTitle");
+            collapsible: true;
+
+            DialogRow {
+                label: I18n.t("captions.segmentationLayout");
+                SegmentedControl {
+                    options: [I18n.t("captions.oneLine"), I18n.t("captions.twoLines"), I18n.t("captions.oneWord")];
+                    current: root.data.rules-layout;
+                    changed(index) => { root.rules-layout(index); }
+                }
+            }
+            DialogRow {
+                label: I18n.t("captions.charactersPerLine");
+                NumberField {
+                    value: root.data.rules-chars;
+                    minimum: 12;
+                    maximum: 80;
+                    precision: 0;
+                    unit: I18n.t("captions.charactersUnit");
+                    changed(value) => { root.rules-chars(value); }
+                }
+            }
+            DialogRow {
+                label: I18n.t("captions.maxWords");
+                NumberField {
+                    value: root.data.rules-words;
+                    minimum: 1;
+                    maximum: 40;
+                    precision: 0;
+                    unit: I18n.t("captions.wordsUnit");
+                    enabled: root.data.rules-layout != 2;
+                    changed(value) => { root.rules-words(value); }
+                }
+            }
+            DialogRow {
+                label: I18n.t("captions.minDuration");
+                NumberField {
+                    value: root.data.rules-min-seconds;
+                    minimum: 0.1;
+                    maximum: root.data.rules-max-seconds;
+                    step: 0.1;
+                    precision: 1;
+                    unit: "s";
+                    changed(value) => { root.rules-min-seconds(value); }
+                }
+            }
+            DialogRow {
+                label: I18n.t("captions.maxDuration");
+                NumberField {
+                    value: root.data.rules-max-seconds;
+                    minimum: root.data.rules-min-seconds;
+                    maximum: 20;
+                    step: 0.5;
+                    precision: 1;
+                    unit: "s";
+                    changed(value) => { root.rules-max-seconds(value); }
+                }
+            }
+            DialogRow {
+                label: I18n.t("captions.gapFrames");
+                NumberField {
+                    value: root.data.rules-gap-frames;
+                    minimum: 0;
+                    maximum: 12;
+                    precision: 0;
+                    unit: I18n.t("captions.framesUnit");
+                    changed(value) => { root.rules-gap-frames(value); }
+                }
+            }
             Text {
-                text: root.from-voice
-                    ? I18n.t("captions.oneTitlePerPhrase")
-                    : I18n.t("captions.oneTitlePerSentence");
+                text: I18n.t("captions.estimatedTimingHint");
                 color: Theme.fg-dim;
                 font-size: Theme.fs-sm;
                 wrap: word-wrap;
@@ -336,7 +714,7 @@ export component CaptionsDialog inherits Modal {
                 }
             }
 
-            if !root.data.running: Button {
+            if !root.data.running && root.data.editor-tab == 0: Button {
                 block: true;
                 primary: true;
                 large: true;
@@ -350,7 +728,7 @@ export component CaptionsDialog inherits Modal {
             // look above, timed as the file says; or a lane of titles
             // written out: the selected title's lane, or with none
             // selected the lane with the most titles, the captions'.
-            if !root.data.running: HorizontalLayout {
+            if !root.data.running && root.data.editor-tab == 0: HorizontalLayout {
                 spacing: 8px;
 
                 Button {

@@ -320,10 +320,31 @@ export component App inherits Window {
     callback captions-model-changed(index: int);
     callback captions-placement-changed(index: int);
     callback captions-size-changed(index: int);
+    callback captions-rules-layout(index: int);
+    callback captions-rules-chars(value: float);
+    callback captions-rules-words(value: float);
+    callback captions-rules-min-seconds(value: float);
+    callback captions-rules-max-seconds(value: float);
+    callback captions-rules-gap-frames(value: float);
     callback captions-begin();
     callback captions-cancel();
     callback captions-import-srt();
     callback captions-export-srt();
+    callback captions-editor-tab-changed(index: int);
+    callback captions-editor-kind-changed(index: int);
+    callback captions-editor-selected(index: int);
+    callback captions-editor-text-edited(text: string);
+    callback captions-editor-apply();
+    callback captions-editor-discard();
+    callback captions-editor-stay();
+    callback captions-karaoke-mode(index: int);
+    callback captions-karaoke-color(index: int);
+    callback captions-karaoke-estimate();
+    callback captions-karaoke-reestimate();
+    callback captions-karaoke-apply-track-style();
+    callback captions-karaoke-word-selected(index: int);
+    callback captions-karaoke-word-start(value: float);
+    callback captions-karaoke-word-end(value: float);
 
     in property <SpeechSheetData> speech;
     in property <[string]> speech-models;
@@ -713,10 +734,31 @@ export component App inherits Window {
             model-changed(index) => { root.captions-model-changed(index); }
             placement-changed(index) => { root.captions-placement-changed(index); }
             size-changed(index) => { root.captions-size-changed(index); }
+            rules-layout(index) => { root.captions-rules-layout(index); }
+            rules-chars(value) => { root.captions-rules-chars(value); }
+            rules-words(value) => { root.captions-rules-words(value); }
+            rules-min-seconds(value) => { root.captions-rules-min-seconds(value); }
+            rules-max-seconds(value) => { root.captions-rules-max-seconds(value); }
+            rules-gap-frames(value) => { root.captions-rules-gap-frames(value); }
             begin => { root.captions-begin(); }
             cancel => { root.captions-cancel(); }
             import-srt => { root.captions-import-srt(); }
             export-srt => { root.captions-export-srt(); }
+            editor-tab-changed(index) => { root.captions-editor-tab-changed(index); }
+            editor-kind-changed(index) => { root.captions-editor-kind-changed(index); }
+            editor-selected(index) => { root.captions-editor-selected(index); }
+            editor-text-edited(text) => { root.captions-editor-text-edited(text); }
+            editor-apply => { root.captions-editor-apply(); }
+            editor-discard => { root.captions-editor-discard(); }
+            editor-stay => { root.captions-editor-stay(); }
+            karaoke-mode(index) => { root.captions-karaoke-mode(index); }
+            karaoke-color(index) => { root.captions-karaoke-color(index); }
+            karaoke-estimate => { root.captions-karaoke-estimate(); }
+            karaoke-reestimate => { root.captions-karaoke-reestimate(); }
+            karaoke-apply-track-style => { root.captions-karaoke-apply-track-style(); }
+            karaoke-word-selected(index) => { root.captions-karaoke-word-selected(index); }
+            karaoke-word-start(value) => { root.captions-karaoke-word-start(value); }
+            karaoke-word-end(value) => { root.captions-karaoke-word-end(value); }
         }
 
         SpeechDialog {
