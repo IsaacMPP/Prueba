@@ -11048,7 +11048,7 @@ impl Studio {
                 starred,
                 &self.look_art,
                 &self.card_paths,
-                |package| !is_lut(package),
+                |package| !is_lut(package) && package.id() != "concat.karaoke-highlight",
             );
             sync(&models.filter_groups, groups);
             sync(&models.catalogue_filters, entries);

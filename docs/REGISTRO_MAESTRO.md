@@ -20,6 +20,8 @@
 
 **Incremento karaoke K1 autorizado (24 oct 2026, pendiente de CI y pruebas reales):** modos Normal/Progresivo/Palabra por subtítulo, color seleccionable, estimación de marcas por palabra claramente indicada como **estimada** y edición manual por intervalo con límites, todo como metadatos persistentes y comandos deshacibles. Al cambiar texto se invalidan los tiempos anteriores sin borrar modo/color. **NO hay todavía render de karaoke visual en preview/export**, sincronización forzada ni animaciones; mantener EJ-016/EJ-017/EJ-018 y el cierre funcional de F4 **pendientes** hasta integración real y pruebas. No agregar IDs EJ-039; conservar 38. Leer [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md).
 
+**Karaoke K2 — render GPU en fuente, PENDIENTE VALIDACIÓN:** un paquete WGSL interno usa mapa de palabras original y claves derivadas de los relojes guardados; la misma transformación se añade temporalmente al export clip que usan monitor y render. No hay clips nuevos por palabra en el proyecto, ni filtros de karaoke persistidos en el stack visual. **No afirmar funcionalidad completa ni pruebas Windows aprobadas sin revisar CI y video real.** Modo Palabra todavía NO centra el vocablo; faltan forced alignment, GPU/CPU fallback probado, comparación color/previsualización/export, animaciones y demás EJ. Los 38 compromisos se mantienen.
+
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |

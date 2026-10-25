@@ -24,6 +24,8 @@
 
 **Karaoke K1 iniciado con autorización nueva (24 oct 2026):** controles y metadatos de modos y tiempos por palabra aún sin render animado; necesita CI Windows. No declarar F4 completada mientras falten render común preview/export, alineación/corrección de palabras y pruebas reales. Prioridad de entrega: estabilizar K1, completar karaoke visual con export, terminar edición F3 y recién después F5/F6 de acuerdo con las dependencias. Preservar 38 EJ, inspector Texto, `main` y PR #9 draft.
 
+**K2 en implementación/validación:** primero verificar render común mediante WGSL y las claves temporales por palabra en el mismo clip, con pruebas GPU/Windows; completar centrado del modo Palabra, edición precisa con audio y color de glifos sin alterar fondos, antes de declarar EJ-016/017 realizados. Los otros compromisos no se marcan terminados por este incremento.
+
 ### Puerta B — Fase 4: karaoke fiable
 
 - Obtener o alinear marcas de tiempo *reales* por palabra. Nunca distribuir uniformemente el tiempo como si fueran marcas exactas sin avisar.

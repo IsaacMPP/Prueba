@@ -1,5 +1,22 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## INCREMENTO K2 — RENDER KARAOKE GPU COMPARTIDO (24 OCT 2026 — CI Y WINDOWS REALES PENDIENTES)
+
+**Autorización de usuario:** ampliar a karaoke visual y demás compromisos; desarrollo incremental sin parches y sin fusiones. Después de K1 se preparó K2 (motor visual) usando **la infraestructura de efectos WGSL original de Concat**:
+
+- Paquete interno `concat.karaoke-highlight`: lee el mapa `reveal_order(uv)` ya horneado por `concat-text`; no reimplementa tipografía, inspector ni generador de clips. Lee reloj de palabra como un parámetro animado `cursor`, colorea los vocablos completados en **Progresivo** y únicamente la palabra activa en **Palabra**. Normal sigue sin efecto.
+- `concat-host/src/titles.rs` convierte las marcas persistentes `CaptionMetadata.words` en claves temporales de `AppliedFilter` **al aplanar el mismo clip de texto**, tanto para `Titles::clips_live` (monitor) como `Titles::clips` (export). Este filtro **NO** se persiste como un efecto adicional del proyecto: el proyecto mantiene un único clip editable por subtítulo; las claves se derivan de sus marcas guardadas. Se añade después de efectos de color del clip.
+- La cadena **se omite** si faltan relojes, el texto cambió en cantidad de palabras o hay tiempos solapados/fuera de rango. Un video sin sincronizar conserva apariencia Normal y sigue siendo editable.
+- El `concat.karaoke-highlight` se excluye del catálogo visible de filtros, porque es una implementación técnica interna, no una opción creativa arrastrable.
+- Tests Rust de `concat-host` exigen que los clips de monitor y export den **exactamente el mismo filtro y claves**, con un solo clip por subtítulo. El catálogo de efectos valida todos los WGSL incorporados.
+
+**Estado preciso:** K2 está preparado en fuente pero **NO puede declararse aprobado hasta CI Rust+Slint, pruebas GPU, smoke Windows e inspección real de exportación**. Incluso con CI verde, **modo Palabra solo destaca el vocablo en su lugar dentro de la frase**; el requisito EJ-017 de recolocarlo *centrado* sigue abierto. No existe forced alignment real ni adaptación fina a sílabas; marcas estimadas conservan su condición explícita y requieren corrección de oído. Las placas/fondos de estilo de texto pueden requerir tratamiento específico para que solo el relleno de los glifos sea coloreado. Compatibilidad GPU/CPU y portabilidad necesitan pruebas. No confundir con cierre F4.
+
+**Archivos K2:** nuevos `src/src/crates/concat-effects/packages/concat.karaoke-highlight/{effect.toml,effect.wgsl}`; `src/src/crates/concat-host/src/titles.rs`, `src/src/crates/concat/src/studio.rs` (ocultar paquete técnico); `ui/dialogs/captions.slint`, `locales/en.json`, `locales/es.json`. Continúa K1. Conservar exactamente EJ-001..038, inspector original Texto, rama activa, PR #9 draft, `main` intacto. No realizar Android, JA Connect ni LOG sin permiso.
+
+---
+
+
 ## NUEVA AUTORIZACIÓN — MODOS KARAOKE Y EDICIÓN AVANZADA (24 OCT 2026)
 
 **Usuario autorizó ampliar el desarrollo** a modos karaoke y pendientes del editor («bien ahora integra los modos karaoke y todo lo demás porfa»). Se mantiene metodología: diseñar y desarrollar incrementos nativos validados, sin hacks, sin tocar `main`, inspector Texto ni fusionar PR #9. La solicitud no anula la puerta de calidad: karaoke completo exige **render funcional idéntico en monitor y export**, marcas por palabra verificables y Windows manual; no declarar terminado por mera persistencia de metadatos.
