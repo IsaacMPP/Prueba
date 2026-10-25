@@ -17,7 +17,7 @@ default = -1
 animate = true
 
 [[param]]
-key = "wordCount"
+key = "word_count"
 label = "Word count"
 min = 1
 max = 128

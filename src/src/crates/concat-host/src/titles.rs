@@ -73,7 +73,7 @@ fn timed_karaoke_filter(clip: &ModelClip) -> Option<AppliedFilter> {
 
     let mut filter = AppliedFilter::new(KARAOKE_EFFECT);
     filter.params.insert("mode".into(), mode);
-    filter.params.insert("wordCount".into(), count as f64);
+    filter.params.insert("word_count".into(), count as f64);
     let hex = meta.active_color.trim_start_matches('#');
     for (name, index) in [("red", 0), ("green", 2), ("blue", 4)] {
         let component = u8::from_str_radix(&hex[index..index + 2], 16).ok()?;
@@ -720,7 +720,7 @@ mod tests {
         let effect = timed_karaoke_filter(clip).expect("word clocks become a GPU treatment");
         assert_eq!(effect.id, KARAOKE_EFFECT);
         assert_eq!(effect.params["mode"], 2.0);
-        assert_eq!(effect.params["wordCount"], 2.0);
+        assert_eq!(effect.params["word_count"], 2.0);
         assert!(effect.value_at("cursor", 0.25, -1.0) >= 0.0);
         // State at the second word boundary is the new active word.
         assert_eq!(effect.value_at("cursor", 0.5, -1.0).floor(), 2.0);
