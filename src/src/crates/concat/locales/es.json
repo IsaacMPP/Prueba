@@ -40,7 +40,7 @@
   "captions.karaokeReestimateAction": "Recalcular tiempos por palabra…",
   "captions.karaokeReestimateConfirm": "Reemplazar tiempos",
   "captions.karaokeReestimateWarning": "Se reemplazarán todas las correcciones de tiempo de esta frase por una estimación. ¿Continuar?",
-  "captions.karaokeRenderInfo": "Con tiempos por palabra guardados, la vista previa GPU y la exportación usan el mismo resaltado. Los tiempos estimados no están alineados con el audio: revísalos escuchando. El modo Palabra resalta la palabra activa en su posición original; centrarla todavía está pendiente.",
+  "captions.karaokeRenderInfo": "Con tiempos por palabra guardados, el render compartido de vista previa y exportación muestra únicamente la palabra activa centrada en modo Palabra y resalta progresivamente la frase en modo Progresivo. Los tiempos estimados no están alineados con el audio; revísalos escuchando.",
   "captions.karaokeStart": "Comienza en",
   "captions.karaokeUnaligned": "Sin tiempos por palabra: usa el botón para crear un borrador editable.",
   "captions.karaokeWordLabel": "Palabra",

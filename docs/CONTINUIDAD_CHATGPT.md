@@ -1,5 +1,19 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## REDISEÑO DE SUBTÍTULOS — INCREMENTO R2, UNA PALABRA CENTRADA (25 OCT 2026, CI PENDIENTE)
+
+El usuario reiteró que en modo **Palabra** solo debe verse una palabra en pantalla y no toda la oración. La implementación K2 resaltaba pero no eliminaba las palabras restantes. Se reconstruyó el efecto técnico `concat.karaoke-highlight` sin crear clips nuevos en el **proyecto**:
+
+- El shader WGSL lee cuatro parámetros animados `word_x`, `word_y`, `word_half_w`, `word_half_h`; en modo **Palabra** toma únicamente el rectángulo del vocablo activo en el raster original, oculta el resto por alfa y lo traslada al **centro de la misma imagen/título**, donde sigue aplicándose el desplazamiento general y la transformación del subtítulo. En pausas o antes de que suene una palabra no muestra el título. En **Progresivo** conserva toda la frase y colorea las palabras pronunciadas. **Normal** no recibe efecto.
+- `concat-host/src/titles.rs` añade rectángulos normalizados al `Art` cacheado en memoria y derivados del sidecar ya disponible en disco. Genera el transform por palabra con claves de salto para el efecto GPU, a partir de los `CaptionMetadata.words` existentes; imagen base de texto, línea de tiempo, IDs de clip y estilo fuente siguen intactos. Si el pintor y el reloj discrepan en conteo de palabras, no aplica el efecto hasta corregir el material: no se inventan alineaciones.
+- Las rutas `Titles::clips_live` y `Titles::clips` comparten el filtro, la textura y posiciones derivadas. El test existente de equivalencia monitor/export comprueba además `word_x` y parámetros del modo una palabra. No se incluyen motores duplicados por plataforma.
+- **Validación obligatoria:** CI Windows Rust, Slint, tests, carga de shader WGSL, smoke/Ivy Bridge e instalación, después revisión visual REAL sobre metraje español, palabras largas/cortas, fondo/transparencia, saltos y exportación. **No declarar completado antes de estas pruebas.** Debe evaluarse aparte el caso de subtítulos con placa/fondo, multirenglones y estilos especiales. La integración automática por audio real y un master style permanentemente vinculado siguen pendientes; R1 es copia en lote.
+
+**Archivos R2:** `src/src/crates/concat-effects/packages/concat.karaoke-highlight/effect.toml`, `effect.wgsl`; `src/src/crates/concat-host/src/titles.rs`; `src/src/crates/concat/locales/en.json` y `es.json` (texto explicativo). No cambiar `main`, PR #9 ni EJ-001..EJ-038.
+
+---
+
+
 ## REDISEÑO DE SUBTÍTULOS — INCREMENTO R1, AUTORIZADO (25 OCT 2026; VALIDAR EN CI Y WINDOWS)
 
 **Problemas observados por el usuario en Windows con metraje real:** seleccionar Karaoke Palabra **todavía deja visible la oración completa**; los controles de tiempos parecían reiniciarse, ajustar una palabra rechazaba el cambio sin comportamiento útil, navegar entre frases restablecía la palabra seleccionada y «Crear tiempos estimados» sobreescribía correcciones; falta un flujo de pista y edición similar a Adobe Premiere. El usuario autorizó explícitamente «procede» para **reconstruir el módulo de edición de subtítulos**, sin improvisar parches ni modificar el resto del editor.

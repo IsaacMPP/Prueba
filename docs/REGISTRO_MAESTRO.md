@@ -26,6 +26,8 @@
 
 **Rediseño subtítulos R1 (25 oct 2026, en validación):** el usuario reportó fallos reales de persistencia/tiempos y autorizó rediseñar el módulo con flujo tipo Premiere. Cambios de primer incremento: cálculo de límites compartidos sin solapes y transacción íntegra; estimación no destructiva y recalculado con confirmación; recordar selección por ID; copiar tipografía/modo/color a la pista en una sola acción deshacible sin tocar palabras, alineación, títulos ni otras pistas. Pruebas incorporadas. **NO completado**: master style vinculado a pista, panel integrado, división/unión de frases y karaoke de única palabra centrada con render exportado. CI Windows y pruebas manuales pendientes. Preservar 38 EJ; ver [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md).
 
+**Rediseño subtítulos R2 (25 oct 2026, en validación):** nuevo shader GPU para modo «Palabra» que recorta solo el vocablo activo y lo centra en el lienzo del título, derivando sus posiciones del mismo pintor/sidecar usado por monitor y exportación, sin generar clips de proyecto por palabra. Progresivo y Normal mantienen su tratamiento separado; conserva metadatos/undo y R1. **Pendiente CI Windows, shader, Smoke y validación visual de exportación y fondos**; no marcar EJ-017 terminado sin pruebas reales. Leer [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md). Se conservan 38 EJ.
+
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |

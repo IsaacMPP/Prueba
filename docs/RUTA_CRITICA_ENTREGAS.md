@@ -28,6 +28,8 @@
 
 **K2 en implementación/validación:** primero verificar render común mediante WGSL y las claves temporales por palabra en el mismo clip, con pruebas GPU/Windows; completar centrado del modo Palabra, edición precisa con audio y color de glifos sin alterar fondos, antes de declarar EJ-016/017 realizados. Los otros compromisos no se marcan terminados por este incremento.
 
+**R2 (25 oct 2026; fuente en validación):** Word-only recorta y centra el vocablo activo desde raster/reveal GPU compartido, sin expandir el proyecto en clips por palabra. Probar shader, Windows y exportación visual con videos reales ANTES de aceptar EJ-017. Las mejoras Premiere de edición por pista, estilos vinculados, sincronización audio y división/unión siguen siendo tareas abiertas.
+
 ### Puerta B — Fase 4: karaoke fiable
 
 - Obtener o alinear marcas de tiempo *reales* por palabra. Nunca distribuir uniformemente el tiempo como si fueran marcas exactas sin avisar.

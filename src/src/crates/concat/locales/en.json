@@ -40,7 +40,7 @@
   "captions.karaokeReestimateAction": "Recalculate word times…",
   "captions.karaokeReestimateConfirm": "Replace timings",
   "captions.karaokeReestimateWarning": "This will replace all word timing edits for this caption with an estimated draft. Continue?",
-  "captions.karaokeRenderInfo": "With saved word clocks, GPU preview and export use the same per-word highlight. Estimated timings are not audio-aligned: review them with the sound. Word mode highlights the active word in its original text position; centering it is not implemented yet.",
+  "captions.karaokeRenderInfo": "With saved word timing, the shared preview/export renderer displays only the centered active word in Word mode and progressively highlights a full phrase in Progressive mode. Estimated word clocks are not audio-aligned; review them with the sound.",
   "captions.karaokeStart": "Starts at",
   "captions.karaokeUnaligned": "No word timing: use the estimate button to create an editable draft.",
   "captions.karaokeWordLabel": "Word",
