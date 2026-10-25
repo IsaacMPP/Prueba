@@ -28,6 +28,8 @@
 
 **Rediseño subtítulos R2 (25 oct 2026, en validación):** nuevo shader GPU para modo «Palabra» que recorta solo el vocablo activo y lo centra en el lienzo del título, derivando sus posiciones del mismo pintor/sidecar usado por monitor y exportación, sin generar clips de proyecto por palabra. Progresivo y Normal mantienen su tratamiento separado; conserva metadatos/undo y R1. **Pendiente CI Windows, shader, Smoke y validación visual de exportación y fondos**; no marcar EJ-017 terminado sin pruebas reales. Leer [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md). Se conservan 38 EJ.
 
+**CI R1 #40165395448 (25 oct 2026): falló cargo check Rust tras 174 tests correctos:** `&[Clip]` frente a `&Vec<Arc<Clip>>` en helper `caption_track_style_commands`. Se ajusta firma a `&[Arc<Clip>]` sin cambiar el comportamiento. **Volver a validar CI** antes de anunciarlo funcional. El R2 de una palabra centrada tampoco tiene aún CI aprobado. Ver continuidad. Se mantienen 38 EJ.
+
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |

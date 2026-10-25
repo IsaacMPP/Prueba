@@ -1,5 +1,12 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## R1 — CORRECCIÓN DE TIPO DETECTADA POR CI WINDOWS (25 OCT 2026)
+
+**CI [#40165395448](https://github.com/IsaacMPP/Prueba/actions/runs/40165395448) terminó failure.** El proyecto pasó **174 pruebas Rust de `concat-project`** sin fallas; luego `cargo check` detectó un solo error E0308 en `concat/src/panes/captions.rs`: el helper nuevo `caption_track_style_commands` esperaba `&[Clip]`, pero `Timeline.clips` es `Vec<Arc<Clip>>`. Corrección estricta de firma a `&[Arc<concat_project::model::Clip>]` reutilizando `std::sync::Arc` ya importado. Sin alterar estilo, texto, tiempos, render ni comportamiento. La versión K3/R2 con el render centrado no debe declararse validada hasta un CI que incluya esta corrección y su Smoke test. `main` intacta, PR #9 draft, 38 EJ preservados.
+
+---
+
+
 ## REDISEÑO DE SUBTÍTULOS — INCREMENTO R2, UNA PALABRA CENTRADA (25 OCT 2026, CI PENDIENTE)
 
 El usuario reiteró que en modo **Palabra** solo debe verse una palabra en pantalla y no toda la oración. La implementación K2 resaltaba pero no eliminaba las palabras restantes. Se reconstruyó el efecto técnico `concat.karaoke-highlight` sin crear clips nuevos en el **proyecto**:

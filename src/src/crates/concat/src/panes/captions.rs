@@ -988,7 +988,7 @@ impl CaptionsPane {
 /// onto other identified captions sharing its track. Never copies words,
 /// timing, alignment, or plain titles. One batch is one undo step.
 fn caption_track_style_commands(
-    clips: &[concat_project::model::Clip], source_id: &str,
+    clips: &[Arc<concat_project::model::Clip>], source_id: &str,
 ) -> (Vec<Command>, usize) {
     let Some(source) = clips.iter().find(|clip| clip.id == source_id) else {
         return (Vec::new(), 0);
