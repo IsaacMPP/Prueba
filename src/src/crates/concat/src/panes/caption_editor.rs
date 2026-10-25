@@ -4,6 +4,7 @@
 //! all stay in one authoritative project model.
 
 use concat_project::{Command, commands::ClipPatch};
+use concat_project::caption_data::{CaptionAlignment, CaptionMetadata};
 use crate::studio::Studio;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -223,11 +224,17 @@ impl CaptionEditor {
                     return false;
                 }
                 style.content = next_text.clone();
+                let timing = clip.caption_metadata().and_then(invalidate_word_timing);
                 commands.push(Command::UpdateClip {
-                    clip_id, patch: ClipPatch {
+                    clip_id: clip_id.clone(), patch: ClipPatch {
                         text: Some(Some(style)), ..ClipPatch::default()
                     },
                 });
+                if let Some(metadata) = timing {
+                    commands.push(Command::SetCaptionMetadata {
+                        clip_id, metadata: Some(metadata),
+                    });
+                }
             }
             Target::Segment { transcript_id, segment_id } => {
                 let Some(mut transcript) = studio.project().transcript(&transcript_id) else {
@@ -244,6 +251,7 @@ impl CaptionEditor {
                     return false;
                 }
                 segment.text = next_text.clone();
+                segment.words.clear(); // Older word clocks no longer describe the corrected words.
                 commands.push(Command::UpsertTranscript { transcript });
                 // Update the caption only when it still matches the old
                 // recognised phrase. Individual changes from the original
@@ -258,12 +266,18 @@ impl CaptionEditor {
                     let Some(mut style) = clip.text.clone() else { continue; };
                     if style.content != self.original { continue; }
                     style.content = next_text.clone();
+                    let timing = invalidate_word_timing(meta);
                     commands.push(Command::UpdateClip {
                         clip_id: clip.id.clone(),
                         patch: ClipPatch {
                             text: Some(Some(style)), ..ClipPatch::default()
                         },
                     });
+                    if let Some(metadata) = timing {
+                        commands.push(Command::SetCaptionMetadata {
+                            clip_id: clip.id.clone(), metadata: Some(metadata),
+                        });
+                    }
                 }
             }
         }
@@ -293,6 +307,18 @@ impl CaptionEditor {
     }
 }
 
+/// A text edit invalidates derived word clocks but does not alter the
+/// chosen karaoke presentation or colors; changing Normal ↔ Karaoke later
+/// preserves the user's visual preferences. One batch makes Undo restore all.
+fn invalidate_word_timing(mut metadata: CaptionMetadata) -> Option<CaptionMetadata> {
+    if metadata.words.is_empty() && metadata.alignment == CaptionAlignment::Unaligned {
+        return None;
+    }
+    metadata.words.clear();
+    metadata.alignment = CaptionAlignment::Unaligned;
+    Some(metadata)
+}
+
 fn brief(text: &str) -> String {
     let one_line = text.split_whitespace().collect::<Vec<_>>().join(" ");
     let mut chars = one_line.chars();
@@ -303,6 +329,26 @@ fn brief(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn changed_text_invalidates_only_word_clocks_not_karaoke_choices() {
+        let source = CaptionMetadata {
+            presentation: concat_project::caption_data::CaptionPresentation::KaraokeWord,
+            active_color: "#00EAFF".into(),
+            alignment: CaptionAlignment::Edited,
+            words: vec![concat_project::caption_data::CaptionWord {
+                id: "w1".into(), start: 0.0, end: 1.0
+            }],
+            ..CaptionMetadata::default()
+        };
+        let cleared = super::invalidate_word_timing(source.clone()).unwrap();
+        assert!(cleared.words.is_empty());
+        assert_eq!(cleared.alignment, CaptionAlignment::Unaligned);
+        assert_eq!(cleared.presentation, source.presentation);
+        assert_eq!(cleared.active_color, source.active_color);
+        assert!(super::invalidate_word_timing(cleared).is_none());
+    }
+
+
     #[test]
     fn changing_one_draft_is_detected_without_changing_its_original() {
         let mut editor = CaptionEditor::default();

@@ -1,5 +1,18 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## NUEVA AUTORIZACIÓN — MODOS KARAOKE Y EDICIÓN AVANZADA (24 OCT 2026)
+
+**Usuario autorizó ampliar el desarrollo** a modos karaoke y pendientes del editor («bien ahora integra los modos karaoke y todo lo demás porfa»). Se mantiene metodología: diseñar y desarrollar incrementos nativos validados, sin hacks, sin tocar `main`, inspector Texto ni fusionar PR #9. La solicitud no anula la puerta de calidad: karaoke completo exige **render funcional idéntico en monitor y export**, marcas por palabra verificables y Windows manual; no declarar terminado por mera persistencia de metadatos.
+
+**Incremento K1 preparado en fuente — PENDIENTE CI/Windows:** en Generar/Editar › Subtítulos hay modos **Normal, Progresivo y Palabra** por subtítulo (metadatos `CaptionPresentation` ya existentes); selección de cuatro colores de resaltado; creación **voluntaria y señalizada de tiempos estimados** por palabra; edición manual de inicio y fin, validada dentro del clip y entre palabras sin solapes; estado de alineación `Unaligned/Estimated/Edited` persistido con `serde(default)` para proyectos antiguos. **Edited = parcialmente editado, no validado exacto.** Cada modificación se guarda en la única historia de deshacer del proyecto; modo A→B→A no elimina color ni tiempos. Cambiar texto de un subtítulo o su frase transcrita invalida los antiguos relojes sin perder modo/color, en el mismo lote undoable. No se crean clips extra por palabra ni se modifica el inspector original.
+
+**Estado estricto:** la interfaz de modos **todavía NO altera el dibujo** del video ni la exportación; render karaoke progresivo y palabra (EJ-016/017) sigue PENDIENTE. Tampoco hay forced alignment de voz (EJ-005/018), backend GPU ni animations implementadas en este incremento. No etiquetar karaoke como terminado. Preview/render común, corrección de relojes con audio real y prueba Windows real son puertas obligatorias.
+
+**Código K1:** `src/src/crates/concat-project/src/caption_data.rs`, `src/src/crates/concat/src/panes/captions.rs`, `src/src/crates/concat/src/panes/caption_editor.rs`, `src/src/crates/concat/src/lib.rs`, `src/src/crates/concat/ui/dialogs/captions.slint`, `src/src/crates/concat/ui/app.slint`, `src/src/crates/concat/locales/{en,es}.json`. Pruebas modelo guardado/reapertura/undo y conservación/invalidez al cambiar texto, estimación proporcional. **Prioridad siguiente:** revisar CI Rust/Slint, corregir bloqueos detectados; luego integrar render de karaoke en el núcleo común monitor/export y comprobarlo, antes de iniciar otros módulos. Mantener los 38 EJ y documentos.
+
+---
+
+
 ## CORRECCIÓN AUTORIZADA DE FASE 3C — VALIDAR CI (24 OCT 2026)
 
 El usuario autorizó expresamente **solo** reparar el fallo de compilación, idiomas y errores posteriores que revele CI, sin añadir funciones nuevas. La ejecución [#40134001688](https://github.com/IsaacMPP/Prueba/actions/runs/40134001688) falló ANTES de compilar Rust/Slint, en `python scripts/locales.py --check`: `gone: captions.oneTitlePerPhrase`. Las etiquetas nuevas de la segmentación estaban fijadas en español.

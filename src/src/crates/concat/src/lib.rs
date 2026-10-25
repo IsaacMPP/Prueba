@@ -2126,6 +2126,24 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
     app.on_captions_editor_stay(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::EditorStay));
     }));
+    app.on_captions_karaoke_mode(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeMode(index)));
+    }));
+    app.on_captions_karaoke_color(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeColor(index)));
+    }));
+    app.on_captions_karaoke_estimate(on_window!(|state| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeEstimate));
+    }));
+    app.on_captions_karaoke_word_selected(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeSelectWord(index)));
+    }));
+    app.on_captions_karaoke_word_start(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeWordStart(value)));
+    }));
+    app.on_captions_karaoke_word_end(on_window!(|state, value: f32| {
+        state.handle(Msg::Captions(CaptionsMsg::KaraokeWordEnd(value)));
+    }));
     app.on_speech_closed(on_window!(|state| {
         state.handle(Msg::Speech(SpeechMsg::Close));
     }));

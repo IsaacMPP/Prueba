@@ -18,6 +18,8 @@
 
 **F3C: reparación de CI autorizada (24 oct 2026):** compilación #40134001688 bloqueada en catálogo de idiomas, antes de Rust/Slint (`gone: captions.oneTitlePerPhrase`). Se corrigieron las referencias del panel F3C a `I18n.t`, retiró la clave obsoleta de los 25 idiomas y añadió etiquetas inglés/español. **Pendiente nuevo CI Windows y prueba manual; no incluir funciones nuevas.**
 
+**Incremento karaoke K1 autorizado (24 oct 2026, pendiente de CI y pruebas reales):** modos Normal/Progresivo/Palabra por subtítulo, color seleccionable, estimación de marcas por palabra claramente indicada como **estimada** y edición manual por intervalo con límites, todo como metadatos persistentes y comandos deshacibles. Al cambiar texto se invalidan los tiempos anteriores sin borrar modo/color. **NO hay todavía render de karaoke visual en preview/export**, sincronización forzada ni animaciones; mantener EJ-016/EJ-017/EJ-018 y el cierre funcional de F4 **pendientes** hasta integración real y pruebas. No agregar IDs EJ-039; conservar 38. Leer [CONTINUIDAD_CHATGPT.md](CONTINUIDAD_CHATGPT.md).
+
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |

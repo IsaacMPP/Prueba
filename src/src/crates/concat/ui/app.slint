@@ -337,6 +337,12 @@ export component App inherits Window {
     callback captions-editor-apply();
     callback captions-editor-discard();
     callback captions-editor-stay();
+    callback captions-karaoke-mode(index: int);
+    callback captions-karaoke-color(index: int);
+    callback captions-karaoke-estimate();
+    callback captions-karaoke-word-selected(index: int);
+    callback captions-karaoke-word-start(value: float);
+    callback captions-karaoke-word-end(value: float);
 
     in property <SpeechSheetData> speech;
     in property <[string]> speech-models;
@@ -743,6 +749,12 @@ export component App inherits Window {
             editor-apply => { root.captions-editor-apply(); }
             editor-discard => { root.captions-editor-discard(); }
             editor-stay => { root.captions-editor-stay(); }
+            karaoke-mode(index) => { root.captions-karaoke-mode(index); }
+            karaoke-color(index) => { root.captions-karaoke-color(index); }
+            karaoke-estimate => { root.captions-karaoke-estimate(); }
+            karaoke-word-selected(index) => { root.captions-karaoke-word-selected(index); }
+            karaoke-word-start(value) => { root.captions-karaoke-word-start(value); }
+            karaoke-word-end(value) => { root.captions-karaoke-word-end(value); }
         }
 
         SpeechDialog {

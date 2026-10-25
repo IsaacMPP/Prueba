@@ -74,6 +74,16 @@ export struct CaptionsSheetData {
     editor-dirty: bool,
     editor-confirm: bool,
     editor-message: string,
+    /// Persistent mode and word timing of the selected native subtitle.
+    karaoke-enabled: bool,
+    karaoke-mode: int,
+    karaoke-color: int,
+    karaoke-words: [string],
+    karaoke-word-index: int,
+    karaoke-has-times: bool,
+    karaoke-word-start: float,
+    karaoke-word-end: float,
+    karaoke-alignment: string,
     /// A transcriber model is installed.
     ready: bool,
     /// Why the last run failed, when it did.
@@ -108,6 +118,12 @@ export component CaptionsDialog inherits Modal {
     callback editor-apply();
     callback editor-discard();
     callback editor-stay();
+    callback karaoke-mode(index: int);
+    callback karaoke-color(index: int);
+    callback karaoke-estimate();
+    callback karaoke-word-selected(index: int);
+    callback karaoke-word-start(value: float);
+    callback karaoke-word-end(value: float);
 
     property <bool> from-voice: root.data.from-voice;
 
@@ -264,6 +280,83 @@ export component CaptionsDialog inherits Modal {
                 color: Theme.fg-dim;
                 font-size: Theme.fs-sm;
                 wrap: word-wrap;
+            }
+
+            if root.data.editor-kind == 1 && root.data.karaoke-enabled: VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: I18n.t("captions.karaokeEditingTitle");
+                    font-weight: 600;
+                    color: Theme.fg;
+                }
+                DialogRow {
+                    label: I18n.t("captions.karaokeModeLabel");
+                    SegmentedControl {
+                        options: [I18n.t("captions.karaokeNormal"), I18n.t("captions.karaokeProgressive"), I18n.t("captions.karaokeWordMode")];
+                        current: root.data.karaoke-mode;
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(index) => { root.karaoke-mode(index); }
+                    }
+                }
+                DialogRow {
+                    label: I18n.t("captions.karaokeColorLabel");
+                    Select {
+                        options: [I18n.t("captions.karaokeYellow"), I18n.t("captions.karaokeCyan"), I18n.t("captions.karaokePink"), I18n.t("captions.karaokeGreen")];
+                        current: root.data.karaoke-color;
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(index) => { root.karaoke-color(index); }
+                    }
+                }
+                Text {
+                    text: root.data.karaoke-alignment;
+                    color: Theme.fg-dim;
+                    font-size: Theme.fs-sm;
+                    wrap: word-wrap;
+                }
+                Button {
+                    label: I18n.t("captions.karaokeEstimateAction");
+                    enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                    clicked => { root.karaoke-estimate(); }
+                }
+                if root.data.karaoke-words.length > 0: DialogRow {
+                    label: I18n.t("captions.karaokeWordLabel");
+                    Select {
+                        options: root.data.karaoke-words;
+                        current: root.data.karaoke-word-index;
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(index) => { root.karaoke-word-selected(index); }
+                    }
+                }
+                if root.data.karaoke-has-times && root.data.karaoke-word-index >= 0: DialogRow {
+                    label: I18n.t("captions.karaokeStart");
+                    NumberField {
+                        value: root.data.karaoke-word-start;
+                        minimum: 0;
+                        precision: 3;
+                        step: 0.01;
+                        unit: "s";
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(value) => { root.karaoke-word-start(value); }
+                    }
+                }
+                if root.data.karaoke-has-times && root.data.karaoke-word-index >= 0: DialogRow {
+                    label: I18n.t("captions.karaokeEnd");
+                    NumberField {
+                        value: root.data.karaoke-word-end;
+                        minimum: 0;
+                        precision: 3;
+                        step: 0.01;
+                        unit: "s";
+                        enabled: !root.data.editor-dirty && !root.data.editor-confirm;
+                        changed(value) => { root.karaoke-word-end(value); }
+                    }
+                }
+                Text {
+                    text: I18n.t("captions.karaokeNotRendered");
+                    color: Theme.fg-dim;
+                    font-size: Theme.fs-sm;
+                    wrap: word-wrap;
+                }
             }
         }
 

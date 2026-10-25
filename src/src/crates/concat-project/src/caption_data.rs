@@ -82,6 +82,19 @@ pub enum CaptionPresentation {
     KaraokeWord,
 }
 
+/// How the subtitle word clocks were obtained. Estimated clocks are never
+/// presented as force-aligned audio. An edit means at least one clock has
+/// been adjusted by hand; the whole phrase is not thereby verified.
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CaptionAlignment {
+    #[default]
+    Unaligned,
+    Estimated,
+    Edited,
+}
+
 /// Seconds relative to the subtitle clip, independently from transcript clocks.
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -104,6 +117,8 @@ pub struct CaptionMetadata {
     pub active_color: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub words: Vec<CaptionWord>,
+    #[serde(default)]
+    pub alignment: CaptionAlignment,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transcript_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -116,6 +131,7 @@ impl Default for CaptionMetadata {
             presentation: CaptionPresentation::Normal,
             active_color: default_active_color(),
             words: Vec::new(),
+            alignment: CaptionAlignment::Unaligned,
             transcript_id: None,
             segment_id: None,
         }
@@ -268,6 +284,43 @@ mod tests {
         assert!(editor.redo());
         let document = to_document(&settings(), editor.project());
         assert_eq!(from_document(&document).unwrap().transcript("tx1"), Some(tx));
+    }
+
+    #[test]
+    fn word_alignment_provenance_survives_project_round_trip_and_mode_switch() {
+        let mut editor = Editor::new();
+        let id = editor.apply(Command::AddTextClip {
+            track_id: Some("T1".into()), above: false, start: 0.0,
+            style: Some(TextStyle { content: "Hola mundo".into(), ..TextStyle::default() }),
+            duration: Some(2.0), offset_y: None,
+        }).unwrap().created_id.unwrap();
+        let mut metadata = CaptionMetadata {
+            alignment: CaptionAlignment::Estimated,
+            words: vec![
+                CaptionWord { id: "w1".into(), start: 0.0, end: 0.8 },
+                CaptionWord { id: "w2".into(), start: 0.8, end: 2.0 },
+            ],
+            ..CaptionMetadata::default()
+        };
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: id.clone(), metadata: Some(metadata.clone())
+        }).unwrap();
+        metadata.presentation = CaptionPresentation::KaraokeProgressive;
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: id.clone(), metadata: Some(metadata.clone())
+        }).unwrap();
+        metadata.presentation = CaptionPresentation::Normal;
+        editor.apply(Command::SetCaptionMetadata {
+            clip_id: id.clone(), metadata: Some(metadata.clone())
+        }).unwrap();
+        let reloaded = from_document(&to_document(&settings(), editor.project())).unwrap();
+        let clip = reloaded.active().clips.iter().find(|c| c.id == id).unwrap();
+        assert_eq!(clip.caption_metadata(), Some(metadata));
+        assert_eq!(clip.caption_metadata().unwrap().alignment, CaptionAlignment::Estimated);
+        assert!(editor.undo());
+        assert_eq!(editor.project().active().clips.iter().find(|c| c.id == id)
+            .unwrap().caption_metadata().unwrap().presentation,
+            CaptionPresentation::KaraokeProgressive);
     }
 
     #[test]

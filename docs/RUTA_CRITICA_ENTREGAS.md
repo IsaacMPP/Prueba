@@ -22,6 +22,8 @@
 - **No tocar** el inspector Texto de Concat: reutilizarlo. No dar por terminadas las opciones de tiempo ni karaoke solo porque existen campos persistentes.
 - Si la UI compila pero no puede probarse en una máquina Windows real, informar esa limitación y conservar el PR como borrador.
 
+**Karaoke K1 iniciado con autorización nueva (24 oct 2026):** controles y metadatos de modos y tiempos por palabra aún sin render animado; necesita CI Windows. No declarar F4 completada mientras falten render común preview/export, alineación/corrección de palabras y pruebas reales. Prioridad de entrega: estabilizar K1, completar karaoke visual con export, terminar edición F3 y recién después F5/F6 de acuerdo con las dependencias. Preservar 38 EJ, inspector Texto, `main` y PR #9 draft.
+
 ### Puerta B — Fase 4: karaoke fiable
 
 - Obtener o alinear marcas de tiempo *reales* por palabra. Nunca distribuir uniformemente el tiempo como si fueran marcas exactas sin avisar.
