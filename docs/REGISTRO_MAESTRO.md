@@ -22,6 +22,8 @@
 
 **Karaoke K2 — render GPU en fuente, PENDIENTE VALIDACIÓN:** un paquete WGSL interno usa mapa de palabras original y claves derivadas de los relojes guardados; la misma transformación se añade temporalmente al export clip que usan monitor y render. No hay clips nuevos por palabra en el proyecto, ni filtros de karaoke persistidos en el stack visual. **No afirmar funcionalidad completa ni pruebas Windows aprobadas sin revisar CI y video real.** Modo Palabra todavía NO centra el vocablo; faltan forced alignment, GPU/CPU fallback probado, comparación color/previsualización/export, animaciones y demás EJ. Los 38 compromisos se mantienen.
 
+**K2 Windows smoke: fallo confirmado y reparación de WGSL autorizada (24 oct 2026):** [CI #40151622185](https://github.com/IsaacMPP/Prueba/actions/runs/40151622185) terminó `failure`: el catálogo de efectos abortó al validar un shader por usar `active` (reservada en WGSL). Corrección mínima: sustituir por `word_is_active` en el paquete `concat.karaoke-highlight`. K1 [#40150719478](https://github.com/IsaacMPP/Prueba/actions/runs/40150719478) fue `success`; K2 exige **nuevo CI + smoke y pruebas reales**. Se mantienen exactamente 38 EJ, `main` intacta y PR #9 en borrador.
+
 Estados: **En validación** = CI o pruebas pendientes; **Prototipo previo** = existe solo en ramas experimentales (NO en fuente limpia); **Conservado** = función base de Concat; **Pendiente** = no integrado o no completado; **Investigación** = requiere factibilidad.
 
 | ID | Función | Prioridad | Estado en fuente limpia | Fase | Criterio para cerrar |

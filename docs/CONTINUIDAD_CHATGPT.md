@@ -1,5 +1,14 @@
 # ESTUDIO JOVEN — CONTINUIDAD ENTRE CONVERSACIONES (LEER PRIMERO)
 
+## CORRECCIÓN AUTORIZADA DE ARRANQUE K2 — PALABRA RESERVADA WGSL (24 OCT 2026)
+
+El usuario autorizó **corregir el fallo identificado** del karaoke, sin ampliar alcance. [Windows CI #40151622185](https://github.com/IsaacMPP/Prueba/actions/runs/40151622185) finalizó `failure` en **Smoke test (Windows)** a pesar de compilar y pasar **172 pruebas Rust de concat-project**. El ejecutable abortó al cargar el catálogo de efectos incorporados, porque el shader `src/src/crates/concat-effects/packages/concat.karaoke-highlight/effect.wgsl` declaró `let active`, pero `active` es nombre reservado en WGSL (`catalogue.rs:1000`). Se sustituye únicamente esa variable por `word_is_active` en su declaración y referencia. Ni la lógica del efecto, ni tiempos de palabra, ni visuales, ni shaders ajenos se modifican.
+
+**Estado:** cambio de código preparado para su CI Windows posterior. NO afirmar que K2 arrancó, exportó o fue probado con metraje real hasta confirmar el nuevo run, smoke, instaladores y validación de GPU en Windows. PR #9 continúa draft, `main` intocado, inspector Texto original intacto, 38 compromisos EJ-001..EJ-038 preservados. K1 aprobada en [#40150719478](https://github.com/IsaacMPP/Prueba/actions/runs/40150719478); K2 requiere validación independiente. Sigue pendiente centrar la palabra, alineación real, y demás prioridades documentadas.
+
+---
+
+
 ## INCREMENTO K2 — RENDER KARAOKE GPU COMPARTIDO (24 OCT 2026 — CI Y WINDOWS REALES PENDIENTES)
 
 **Autorización de usuario:** ampliar a karaoke visual y demás compromisos; desarrollo incremental sin parches y sin fusiones. Después de K1 se preparó K2 (motor visual) usando **la infraestructura de efectos WGSL original de Concat**:

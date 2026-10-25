@@ -25,7 +25,7 @@ fn effect(uv: vec2<f32>) -> vec4<f32> {
         return c;
     }
     let word = floor(slot * 0.5);
-    let active = slot - word * 2.0 < 0.5;
+    let word_is_active = slot - word * 2.0 < 0.5;
     let total = max(1.0, params.word_count);
     // Reveal order is quantised to 8-bit in the title's existing map.
     let ordinal = round(reveal_order(uv) * max(total - 1.0, 0.0));
@@ -35,7 +35,7 @@ fn effect(uv: vec2<f32>) -> vec4<f32> {
         selected = ordinal <= word;
     } else {
         // Highlight only the word whose manually editable clock is live.
-        selected = active && abs(ordinal - word) < 0.5;
+        selected = word_is_active && abs(ordinal - word) < 0.5;
     }
     if (!selected) {
         return c;
